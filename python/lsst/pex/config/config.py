@@ -1030,6 +1030,14 @@ class Config(metaclass=ConfigMeta):
             except KeyError:
                 raise KeyError("No field of name %s exists in config type %s" % (name, _typeStr(self)))
 
+    def copy(self):
+        """!Return a copy of this config.
+
+        The copy is frozen if the config copied was frozen; copying should
+        occur before freezing if the copy is to be modified.
+        """
+        return copy.deepcopy(self)
+
     def load(self, filename, root="config"):
         """Modify this config in place by executing the Python code in a
         configuration file.
