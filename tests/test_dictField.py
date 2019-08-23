@@ -82,7 +82,7 @@ class DictFieldTest(unittest.TestCase):
         c.d4["c"] = None
         self.assertEqual(c.d4["a"], 12)
         self.assertEqual(c.d4["b"], "three")
-        self.assertEqual(c.d4["c"], None)
+        self.assertIsNone(c.d4["c"])
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d4", {"hi": [1, 2, 3]})
 
     def testValidate(self):

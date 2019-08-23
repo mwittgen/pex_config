@@ -96,9 +96,9 @@ class ConfigTest(unittest.TestCase):
         del self.comp
 
     def testInit(self):
-        self.assertEqual(self.simple.i, None)
+        self.assertIsNone(self.simple.i)
         self.assertEqual(self.simple.f, 3.0)
-        self.assertEqual(self.simple.b, False)
+        self.assertFalse(self.simple.b)
         self.assertEqual(self.simple.c, "Hello")
         self.assertEqual(list(self.simple.ll), [1, 2, 3])
         self.assertEqual(self.simple.d["key"], "value")
@@ -258,7 +258,7 @@ class ConfigTest(unittest.TestCase):
 
         # test multi-level inheritance
         c = CCC()
-        self.assertEqual("a" in c.toDict(), True)
+        self.assertIn("a", c.toDict())
         self.assertEqual(c._fields["a"].dtype, int)
         self.assertEqual(c.a, 4)
 
@@ -271,14 +271,14 @@ class ConfigTest(unittest.TestCase):
 
         e = EEE()
         self.assertEqual(e._fields["a"].dtype, float)
-        self.assertEqual("a" in e.toDict(), True)
+        self.assertIn("a", e.toDict())
         self.assertEqual(e.a, 0.0)
 
         class FFF(AAA, DDD):
             pass
         f = FFF()
         self.assertEqual(f._fields["a"].dtype, int)
-        self.assertEqual("a" in f.toDict(), True)
+        self.assertIn("a", f.toDict())
         self.assertEqual(f.a, 4)
 
         # test inheritance from non Config objects
@@ -289,7 +289,7 @@ class ConfigTest(unittest.TestCase):
             pass
         h = HHH()
         self.assertEqual(h._fields["a"].dtype, float)
-        self.assertEqual("a" in h.toDict(), True)
+        self.assertIn("a", h.toDict())
         self.assertEqual(h.a, 10.0)
 
         # test partial Field redefinition
@@ -303,14 +303,14 @@ class ConfigTest(unittest.TestCase):
 
     def testConvert(self):
         pol = pexConfig.makePolicy(self.simple)
-        self.assertEqual(pol.exists("i"), False)
+        self.assertFalse(pol.exists("i"))
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
 
         ps = pexConfig.makePropertySet(self.simple)
-        self.assertEqual(ps.exists("i"), False)
+        self.assertFalse(ps.exists("i"))
         self.assertEqual(ps.getScalar("f"), self.simple.f)
         self.assertEqual(ps.getScalar("b"), self.simple.b)
         self.assertEqual(ps.getScalar("c"), self.simple.c)

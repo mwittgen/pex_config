@@ -110,7 +110,7 @@ class ConfigDictFieldTest(unittest.TestCase):
         rt.load("emptyConfigDictTest.py")
         os.remove("emptyConfigDictTest.py")
 
-        self.assertEqual(rt.d1, None)
+        self.assertIsNone(rt.d1)
 
     def testToDict(self):
         c = Config2(d1={"a": Config1(f=4), "b": Config1})
