@@ -21,8 +21,15 @@
 
 __all__ = ('makePropertySet', 'makePolicy')
 
-import lsst.pex.policy
-import lsst.daf.base
+try:
+    import lsst.pex.policy as pexPolicy
+except ImportError:
+    pexPolicy = None
+
+try:
+    import lsst.daf.base as dafBase
+except ImportError:
+    dafBase = None
 
 
 def makePropertySet(config):
@@ -45,6 +52,9 @@ def makePropertySet(config):
     makePolicy
     lsst.daf.base.PropertySet
     """
+    if dafBase is None:
+        raise RuntimeError("lsst.daf.base is not available")
+
     def _helper(ps, prefix, dict_):
         for k, v in dict_.items():
             name = prefix + "." + k if prefix is not None else k
@@ -54,7 +64,7 @@ def makePropertySet(config):
                 ps.set(name, v)
 
     if config is not None:
-        ps = lsst.daf.base.PropertySet()
+        ps = dafBase.PropertySet()
         _helper(ps, None, config.toDict())
         return ps
     else:
@@ -80,8 +90,11 @@ def makePolicy(config):
     makePropertySet
     lsst.pex.policy.Policy
     """
+    if pexPolicy is None:
+        raise RuntimeError("lsst.pex.policy is not available")
+
     def _helper(dict_):
-        p = lsst.pex.policy.Policy()
+        p = pexPolicy.Policy()
         for k, v in dict_.items():
             if isinstance(v, dict):
                 p.set(k, _helper(v))

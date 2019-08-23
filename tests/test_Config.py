@@ -28,6 +28,17 @@ import unittest
 
 import lsst.pex.config as pexConfig
 
+# Some tests depend on daf_base or pex_policy.
+# Skip them if they are not found.
+try:
+    import lsst.daf.base as dafBase
+except ImportError:
+    dafBase = None
+try:
+    import lsst.pex.policy as pexPolicy
+except ImportError:
+    pexPolicy = None
+
 GLOBAL_REGISTRY = {}
 
 
@@ -301,7 +312,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
 
-    def testConvert(self):
+    @unittest.skipIf(pexPolicy is None, "lsst.pex.policy is required")
+    def testConvertPolicy(self):
         pol = pexConfig.makePolicy(self.simple)
         self.assertFalse(pol.exists("i"))
         self.assertEqual(pol.get("f"), self.simple.f)
@@ -309,15 +321,17 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
 
+        pol = pexConfig.makePolicy(self.comp)
+        self.assertEqual(pol.get("c.f"), self.comp.c.f)
+
+    @unittest.skipIf(dafBase is None, "lsst.daf.base is required")
+    def testConvertPropertySet(self):
         ps = pexConfig.makePropertySet(self.simple)
         self.assertFalse(ps.exists("i"))
         self.assertEqual(ps.getScalar("f"), self.simple.f)
         self.assertEqual(ps.getScalar("b"), self.simple.b)
         self.assertEqual(ps.getScalar("c"), self.simple.c)
         self.assertEqual(list(ps.getArray("ll")), list(self.simple.ll))
-
-        pol = pexConfig.makePolicy(self.comp)
-        self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.getScalar("c.f"), self.comp.c.f)
