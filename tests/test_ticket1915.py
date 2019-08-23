@@ -20,7 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 
@@ -54,14 +53,5 @@ class HistoryMergeTest(unittest.TestCase):
         self.assertEqual([h[0] for h in c.r["c2"].c.history["f"]], [4, 5])
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

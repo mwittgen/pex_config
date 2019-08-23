@@ -20,7 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
 
@@ -149,14 +148,5 @@ class ListFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

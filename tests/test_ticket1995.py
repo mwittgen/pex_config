@@ -22,7 +22,6 @@
 import math
 import tempfile
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 
@@ -59,14 +58,5 @@ class LoadSpecialTest(unittest.TestCase):
         self.assertTrue(math.isnan(c2.f1))
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

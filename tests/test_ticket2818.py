@@ -23,7 +23,6 @@ import os
 import sys
 import io
 import unittest
-import lsst.utils.tests
 
 # Extend path to find the helper code for this test relative to the test file
 sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
@@ -45,14 +44,5 @@ config.test.retarget(AnotherConfigurable)
         self.assertIn("import ticket2818helper.another", values)
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

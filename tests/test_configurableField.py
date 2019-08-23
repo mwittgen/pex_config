@@ -21,7 +21,6 @@
 
 import os
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConf
 
 
@@ -129,14 +128,5 @@ class ConfigurableFieldTest(unittest.TestCase):
         self.assertEqual(c.c2.target, r.c2.target)
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

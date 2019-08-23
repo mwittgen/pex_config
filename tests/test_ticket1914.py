@@ -19,10 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os.path
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConf
-import lsst.utils
 
 
 class Config1(pexConf.Config):
@@ -40,18 +39,9 @@ class Config3(pexConf.Config):
 class FieldNameReportingTest(unittest.TestCase):
     def test(self):
         c3 = Config3()
-        pex_product_dir = lsst.utils.getPackageDir('pex_config')
-        c3.load(pex_product_dir + "/tests/config/ticket1914.py")
-
-
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        c3.load(os.path.join(test_dir, "config/ticket1914.py"))
 
 
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()
