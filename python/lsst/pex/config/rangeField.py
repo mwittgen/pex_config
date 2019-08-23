@@ -19,11 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ["RangeField"]
+
 from .config import Field, _typeStr
 from .callStack import getStackFrame
-
-
-__all__ = ["RangeField"]
 
 
 class RangeField(Field):

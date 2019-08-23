@@ -19,12 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ["ConfigDictField"]
+
 from .config import Config, FieldValidationError, _autocast, _typeStr, _joinNamePath
 from .dictField import Dict, DictField
 from .comparison import compareConfigs, compareScalars, getComparisonName
 from .callStack import getCallStack, getStackFrame
-
-__all__ = ["ConfigDictField"]
 
 
 class ConfigDict(Dict):
