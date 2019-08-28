@@ -1,9 +1,10 @@
+# This file is part of pex_config.
 #
-# LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (http://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,15 +16,20 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <http://www.lsstcorp.org/LegalNotices/>.
-#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __all__ = ('makePropertySet', 'makePolicy')
 
-import lsst.pex.policy
-import lsst.daf.base
+try:
+    import lsst.pex.policy as pexPolicy
+except ImportError:
+    pexPolicy = None
+
+try:
+    import lsst.daf.base as dafBase
+except ImportError:
+    dafBase = None
 
 
 def makePropertySet(config):
@@ -46,6 +52,9 @@ def makePropertySet(config):
     makePolicy
     lsst.daf.base.PropertySet
     """
+    if dafBase is None:
+        raise RuntimeError("lsst.daf.base is not available")
+
     def _helper(ps, prefix, dict_):
         for k, v in dict_.items():
             name = prefix + "." + k if prefix is not None else k
@@ -55,7 +64,7 @@ def makePropertySet(config):
                 ps.set(name, v)
 
     if config is not None:
-        ps = lsst.daf.base.PropertySet()
+        ps = dafBase.PropertySet()
         _helper(ps, None, config.toDict())
         return ps
     else:
@@ -81,8 +90,11 @@ def makePolicy(config):
     makePropertySet
     lsst.pex.policy.Policy
     """
+    if pexPolicy is None:
+        raise RuntimeError("lsst.pex.policy is not available")
+
     def _helper(dict_):
-        p = lsst.pex.policy.Policy()
+        p = pexPolicy.Policy()
         for k, v in dict_.items():
             if isinstance(v, dict):
                 p.set(k, _helper(v))

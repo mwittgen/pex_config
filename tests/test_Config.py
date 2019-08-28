@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-
+# This file is part of pex_config.
 #
-# LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (http://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,10 +16,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <http://www.lsstcorp.org/LegalNotices/>.
-#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
 import itertools
@@ -29,8 +26,18 @@ import os
 import pickle
 import unittest
 
-import lsst.utils.tests
 import lsst.pex.config as pexConfig
+
+# Some tests depend on daf_base or pex_policy.
+# Skip them if they are not found.
+try:
+    import lsst.daf.base as dafBase
+except ImportError:
+    dafBase = None
+try:
+    import lsst.pex.policy as pexPolicy
+except ImportError:
+    pexPolicy = None
 
 GLOBAL_REGISTRY = {}
 
@@ -100,9 +107,9 @@ class ConfigTest(unittest.TestCase):
         del self.comp
 
     def testInit(self):
-        self.assertEqual(self.simple.i, None)
+        self.assertIsNone(self.simple.i)
         self.assertEqual(self.simple.f, 3.0)
-        self.assertEqual(self.simple.b, False)
+        self.assertFalse(self.simple.b)
         self.assertEqual(self.simple.c, "Hello")
         self.assertEqual(list(self.simple.ll), [1, 2, 3])
         self.assertEqual(self.simple.d["key"], "value")
@@ -262,7 +269,7 @@ class ConfigTest(unittest.TestCase):
 
         # test multi-level inheritance
         c = CCC()
-        self.assertEqual("a" in c.toDict(), True)
+        self.assertIn("a", c.toDict())
         self.assertEqual(c._fields["a"].dtype, int)
         self.assertEqual(c.a, 4)
 
@@ -275,14 +282,14 @@ class ConfigTest(unittest.TestCase):
 
         e = EEE()
         self.assertEqual(e._fields["a"].dtype, float)
-        self.assertEqual("a" in e.toDict(), True)
+        self.assertIn("a", e.toDict())
         self.assertEqual(e.a, 0.0)
 
         class FFF(AAA, DDD):
             pass
         f = FFF()
         self.assertEqual(f._fields["a"].dtype, int)
-        self.assertEqual("a" in f.toDict(), True)
+        self.assertIn("a", f.toDict())
         self.assertEqual(f.a, 4)
 
         # test inheritance from non Config objects
@@ -293,7 +300,7 @@ class ConfigTest(unittest.TestCase):
             pass
         h = HHH()
         self.assertEqual(h._fields["a"].dtype, float)
-        self.assertEqual("a" in h.toDict(), True)
+        self.assertIn("a", h.toDict())
         self.assertEqual(h.a, 10.0)
 
         # test partial Field redefinition
@@ -305,23 +312,26 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
 
-    def testConvert(self):
+    @unittest.skipIf(pexPolicy is None, "lsst.pex.policy is required")
+    def testConvertPolicy(self):
         pol = pexConfig.makePolicy(self.simple)
-        self.assertEqual(pol.exists("i"), False)
+        self.assertFalse(pol.exists("i"))
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
 
+        pol = pexConfig.makePolicy(self.comp)
+        self.assertEqual(pol.get("c.f"), self.comp.c.f)
+
+    @unittest.skipIf(dafBase is None, "lsst.daf.base is required")
+    def testConvertPropertySet(self):
         ps = pexConfig.makePropertySet(self.simple)
-        self.assertEqual(ps.exists("i"), False)
+        self.assertFalse(ps.exists("i"))
         self.assertEqual(ps.getScalar("f"), self.simple.f)
         self.assertEqual(ps.getScalar("b"), self.simple.b)
         self.assertEqual(ps.getScalar("c"), self.simple.c)
         self.assertEqual(list(ps.getArray("ll")), list(self.simple.ll))
-
-        pol = pexConfig.makePolicy(self.comp)
-        self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.getScalar("c.f"), self.comp.c.f)
@@ -452,14 +462,5 @@ except ImportError:
             self.assertTrue(hasattr(self.simple, name))
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()

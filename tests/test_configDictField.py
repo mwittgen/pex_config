@@ -1,11 +1,10 @@
-#!/usr/bin/env python
-
+# This file is part of pex_config.
 #
-# LSST Data Management System
-# Copyright 2008, 2009, 2010 LSST Corporation.
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (http://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,13 +16,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <http://www.lsstcorp.org/LegalNotices/>.
-#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import unittest
-import lsst.utils.tests
 import lsst.pex.config as pexConfig
 
 
@@ -113,7 +110,7 @@ class ConfigDictFieldTest(unittest.TestCase):
         rt.load("emptyConfigDictTest.py")
         os.remove("emptyConfigDictTest.py")
 
-        self.assertEqual(rt.d1, None)
+        self.assertIsNone(rt.d1)
 
     def testToDict(self):
         c = Config2(d1={"a": Config1(f=4), "b": Config1})
@@ -151,14 +148,5 @@ class ConfigDictFieldTest(unittest.TestCase):
         self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
 
 
-class TestMemory(lsst.utils.tests.MemoryTestCase):
-    pass
-
-
-def setup_module(module):
-    lsst.utils.tests.init()
-
-
 if __name__ == "__main__":
-    lsst.utils.tests.init()
     unittest.main()
