@@ -21,6 +21,8 @@
 
 __all__ = ('makePropertySet', 'makePolicy')
 
+from deprecated.sphinx import deprecated
+
 try:
     import lsst.pex.policy as pexPolicy
 except ImportError:
@@ -71,6 +73,8 @@ def makePropertySet(config):
         return None
 
 
+@deprecated("pex_policy is deprecated, prefer makePropertySet (will be removed after v19)",
+            category=FutureWarning)
 def makePolicy(config):
     """Convert a configuration into a `lsst.pex.policy.Policy`.
 

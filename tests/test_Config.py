@@ -314,14 +314,16 @@ class ConfigTest(unittest.TestCase):
 
     @unittest.skipIf(pexPolicy is None, "lsst.pex.policy is required")
     def testConvertPolicy(self):
-        pol = pexConfig.makePolicy(self.simple)
+        with self.assertWarns(FutureWarning):
+            pol = pexConfig.makePolicy(self.simple)
         self.assertFalse(pol.exists("i"))
         self.assertEqual(pol.get("f"), self.simple.f)
         self.assertEqual(pol.get("b"), self.simple.b)
         self.assertEqual(pol.get("c"), self.simple.c)
         self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
 
-        pol = pexConfig.makePolicy(self.comp)
+        with self.assertWarns(FutureWarning):
+            pol = pexConfig.makePolicy(self.comp)
         self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
     @unittest.skipIf(dafBase is None, "lsst.daf.base is required")
