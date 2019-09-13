@@ -450,6 +450,9 @@ class Field:
         value = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
 
+        if self.deprecated and value == self.default:
+            return
+
         # write full documentation string as comment lines (i.e. first character is #)
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
