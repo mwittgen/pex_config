@@ -135,6 +135,18 @@ class ConfigTest(unittest.TestCase):
 
             self.assertIn(self.deprecation._fields['old'].deprecated, str(w.warnings[-1].message))
 
+    def testDeprecationOutput(self):
+        """Test that a deprecated field is not written out unless it is set.
+        """
+        stream = io.StringIO()
+        self.deprecation.saveToStream(stream)
+        self.assertNotIn("config.old", stream.getvalue())
+        with self.assertWarns(FutureWarning):
+            self.deprecation.old = 5
+        stream = io.StringIO()
+        self.deprecation.saveToStream(stream)
+        self.assertIn("config.old=5\n", stream.getvalue())
+
     def testValidate(self):
         self.simple.validate()
 
