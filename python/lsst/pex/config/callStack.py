@@ -102,7 +102,7 @@ class StackFrame:
     getStackFrame
     """
 
-    _STRIP = "/python/lsst/"
+    _STRIP = "/DRAGONS/"
     """String to strip from the ``filename`` in the constructor."""
 
     def __init__(self, filename, lineno, function, content=None):
