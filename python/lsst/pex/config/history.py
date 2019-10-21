@@ -171,7 +171,7 @@ def _colorize(text, category):
     return str(text)
 
 
-def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
+def format(config, name=None, writeSourceLine=True, prefix="", verbose=False, debug=False):
     """Format the history record for a configuration, or a specific
     configuration field.
 
@@ -190,13 +190,17 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
         even before any source line. The default is an empty string.
     verbose : `bool`, optional
         Default is `False`.
+    debug : `bool`, optional
+        Enable debug detail.
     """
-
+    msg = []
+    verbose |= debug  # verbose=False and debug=True seems wrong!
     if name is None:
         for i, name in enumerate(config.history.keys()):
             if i > 0:
-                print()
-            print(format(config, name))
+                msg.append("")
+            msg.append(format(config, name))
+        return "\n".join(msg)
 
     outputs = []
     for value, stack, label in config.history.get(name, []):
@@ -209,7 +213,7 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
                 "execfile",
                 "wrapper",
             ) or os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py"):
-                if not verbose:
+                if not debug:
                     continue
 
             line = []
@@ -236,6 +240,9 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
                 )
 
             output.append(line)
+
+            if not verbose:
+                break
 
         outputs.append([value, output])
 
