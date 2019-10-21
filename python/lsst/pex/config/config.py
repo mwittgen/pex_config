@@ -51,6 +51,7 @@ except ImportError:
 try:
     from astrodata import AstroData
 except ImportError:
+
     class AstroData:
         pass
 
@@ -251,17 +252,8 @@ class FieldValidationError(ValueError):
         """
 
         self.configSource = config._source
-        error = (
-            "%s '%s' failed validation: %s\n"
-            "For more information see the Field definition at:\n%s"
-            " and the Config definition at:\n%s"
-            % (
-                self.fieldType.__name__,
-                self.fullname,
-                msg,
-                self.fieldSource.format(),
-                self.configSource.format(),
-            )
+        error = "{} '{}' ({}) failed validation: {}".format(
+            self.fieldType.__name__, self.fullname, field.doc, msg
         )
         super().__init__(error)
 
