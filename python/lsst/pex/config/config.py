@@ -30,6 +30,7 @@ __all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError", "UnexpectedP
 import copy
 import importlib
 import io
+import itertools
 import math
 import os
 import re
@@ -191,9 +192,9 @@ class ConfigMeta(type):
             for b in bases:
                 fields.update(getFields(b))
 
-            for k, v in classtype.__dict__.items():
-                if isinstance(v, Field):
-                    fields[k] = v
+            field_dict = {k: v for k, v in classtype.__dict__.items() if isinstance(v, Field)}
+            for k, v in sorted(field_dict.items(), key=lambda x: x[1]._creation_order):
+                fields[k] = v
             return fields
 
         fields = getFields(cls)
@@ -346,6 +347,8 @@ class Field:
     """Supported data types for field values (`set` of types).
     """
 
+    _counter = itertools.count()
+
     def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
@@ -402,6 +405,8 @@ class Field:
         """The stack frame where this field is defined (`list` of
         `lsst.pex.config.callStack.StackFrame`).
         """
+
+        self._creation_order = next(Field._counter)
 
     def rename(self, instance):
         """Rename the field in a `~lsst.pex.config.Config` (for internal use
