@@ -109,8 +109,17 @@ def _autocast(x, dtype):
         ``dtype``. If the cast cannot be performed the original value of
         ``x`` is returned.
     """
-    if dtype == float and isinstance(x, int):
+    if isinstance(x, int) and (
+        dtype == float or (isinstance(dtype, tuple) and float in dtype and int not in dtype)
+    ):
         return float(x)
+    if isinstance(x, str):
+        for type in (int, float, bool):
+            if dtype == type or (isinstance(dtype, tuple) and type in dtype):
+                try:
+                    return type(x)
+                except ValueError:  # Carry on and try a different coercion
+                    pass
     return x
 
 
@@ -335,14 +344,19 @@ class Field:
     5
     """
 
-    supportedTypes = set((str, bool, float, int, complex, AstroData))
+    supportedTypes = set((str, bool, float, int, complex, tuple, AstroData))
     """Supported data types for field values (`set` of types).
     """
 
     _counter = itertools.count()
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
-        if dtype not in self.supportedTypes:
+        if isinstance(dtype, list):
+            dtype = tuple(dtype)
+        if isinstance(dtype, tuple):
+            if any([x not in self.supportedTypes for x in dtype]):
+                raise ValueError("Unsupported Field dtype in %s" % repr(dtype))
+        elif dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
 
         source = getStackFrame()
@@ -487,11 +501,18 @@ class Field:
             return
 
         if not isinstance(value, self.dtype):
-            msg = "Value %s is of incorrect type %s. Expected type %s" % (
-                value,
-                _typeStr(value),
-                _typeStr(self.dtype),
-            )
+            if isinstance(self.dtype, tuple):
+                msg = "Value %s is of incorrect type %s. Expected types %s" % (
+                    value,
+                    _typeStr(value),
+                    [_typeStr(dt) for dt in self.dtype],
+                )
+            else:
+                msg = "Value %s is of incorrect type %s. Expected type %s" % (
+                    value,
+                    _typeStr(value),
+                    _typeStr(self.dtype),
+                )
             raise TypeError(msg)
         if self.check is not None and not self.check(value):
             msg = "Value %s is not a valid value" % str(value)

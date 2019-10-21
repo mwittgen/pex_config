@@ -97,6 +97,8 @@ def compareScalars(name, v1, v2, output, rtol=1e-8, atol=1e-8, dtype=None):
     -----
     Floating point comparisons are performed by `numpy.allclose`.
     """
+    if isinstance(dtype, tuple):
+        dtype = type(v1)
     if v1 is None or v2 is None:
         result = v1 == v2
     elif dtype in (float, complex):
