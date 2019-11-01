@@ -37,7 +37,8 @@ def getCallerFrame(relative=0):
     Parameters
     ----------
     relative : `int`, optional
-        Number of frames (0 or more) above the caller to retrieve. Default is 0.
+        Number of frames (0 or more) above the caller to retrieve.
+        Default is 0.
 
     Returns
     -------
@@ -157,8 +158,8 @@ class StackFrame:
         Parameters
         ----------
         full : `bool`, optional
-            If `True`, output includes the conentent (`StackFrame.content`) being executed. Default
-            is `False`.
+            If `True`, output includes the conentent (`StackFrame.content`)
+            being executed. Default is `False`.
 
         Returns
         -------

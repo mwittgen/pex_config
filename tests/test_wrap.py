@@ -42,7 +42,8 @@ class WrapTest(unittest.TestCase):
         self.assertTrue(testLib.checkControl(control, config.foo, config.bar.list()))
 
     def testReadControl(self):
-        """Test reading the values from a C++ Control object into a Config object."""
+        """Test reading the values from a C++ Control object into a Config
+        object."""
         control = testLib.ControlObject()
         control.foo = 3
         control.bar = ["zot", "yox"]
@@ -51,7 +52,8 @@ class WrapTest(unittest.TestCase):
         self.assertTrue(testLib.checkControl(control, config.foo, config.bar.list()))
 
     def testDefaults(self):
-        """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
+        """Test that C++ Control object defaults are correctly used as defaults
+        for Config objects."""
         config = testLib.ConfigObject()
         control = testLib.ControlObject()
         self.assertTrue(testLib.checkControl(control, config.foo, config.bar.list()))
@@ -77,7 +79,8 @@ class NestedWrapTest(unittest.TestCase):
         self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testReadControl(self):
-        """Test reading the values from a C++ Control object into a Config object."""
+        """Test reading the values from a C++ Control object into a Config
+        object."""
         control = testLib.OuterControlObject()
         control.a.p = 6.0
         control.a.q = 4
@@ -87,7 +90,8 @@ class NestedWrapTest(unittest.TestCase):
         self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))
 
     def testDefaults(self):
-        """Test that C++ Control object defaults are correctly used as defaults for Config objects."""
+        """Test that C++ Control object defaults are correctly used as defaults
+        for Config objects."""
         config = testLib.OuterConfigObject()
         control = testLib.OuterControlObject()
         self.assertTrue(testLib.checkNestedControl(control, config.a.p, config.a.q, config.b))

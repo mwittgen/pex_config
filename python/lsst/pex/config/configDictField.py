@@ -233,7 +233,8 @@ class ConfigDictField(DictField):
         atol : `float`
             Absolute tolerance for floating point comparisons.
         output : callable
-            A callable that takes a string, used (possibly repeatedly) to report inequalities.
+            A callable that takes a string, used (possibly repeatedly) to
+            report inequalities.
 
         Returns
         -------

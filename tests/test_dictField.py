@@ -116,8 +116,8 @@ class DictFieldTest(unittest.TestCase):
     def testEquality(self):
         """Test DictField.__eq__
 
-        We create two dicts, with the keys explicitly added in a different order
-        and test their equality.
+        We create two dicts, with the keys explicitly added in a different
+        order and test their equality.
         """
         keys1 = ['A', 'B', 'C']
         keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']

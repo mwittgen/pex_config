@@ -135,7 +135,8 @@ class ConfigurableInstance:
     def __setattr__(self, name, value, at=None, label="assignment"):
         """Pretend to be an instance of ConfigClass.
 
-        Attributes defined by ConfigurableInstance will shadow those defined in ConfigClass
+        Attributes defined by ConfigurableInstance will shadow those defined
+        in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
@@ -151,7 +152,8 @@ class ConfigurableInstance:
     def __delattr__(self, name, at=None, label="delete"):
         """
         Pretend to be an isntance of  ConfigClass.
-        Attributes defiend by ConfigurableInstance will shadow those defined in ConfigClass
+        Attributes defiend by ConfigurableInstance will shadow those defined
+        in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")

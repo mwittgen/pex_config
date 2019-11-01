@@ -40,7 +40,8 @@ class Color:
     text : `str`
         Text content to print to a terminal.
     category : `str`
-        Semantic category of the ``text``. See `categories` for possible values.
+        Semantic category of the ``text``. See `categories` for possible
+        values.
 
     Raises
     ------

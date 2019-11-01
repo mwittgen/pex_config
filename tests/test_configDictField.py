@@ -136,8 +136,8 @@ class ConfigDictFieldTest(unittest.TestCase):
     def testEquality(self):
         """Test ConfigDictField.__eq__
 
-        We create two configs, with the keys explicitly added in a different order
-        and test their equality.
+        We create two configs, with the keys explicitly added in a different
+        order and test their equality.
         """
         keys1 = ['A', 'B', 'C']
         keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']

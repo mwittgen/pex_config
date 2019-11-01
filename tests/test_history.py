@@ -42,8 +42,8 @@ class HistoryTest(unittest.TestCase):
         output = b.formatHistory("a", writeSourceLine=False)
 
         # The history differs depending on how the tests are executed and might
-        # depend on pytest internals. We therefore test the output for the presence
-        # of strings that we know should be there.
+        # depend on pytest internals. We therefore test the output for the
+        # presence of strings that we know should be there.
 
         # For reference, this is the output from running with unittest.main()
         """a

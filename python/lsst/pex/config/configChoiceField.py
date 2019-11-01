@@ -406,7 +406,8 @@ class ConfigChoiceField(Field):
     (If the config instance allows multiple selections, you'd assign a sequence
     to the ``names`` attribute instead.)
 
-    ``ConfigChoiceField`` instances also allow multiple values of the same type:
+    ``ConfigChoiceField`` instances also allow multiple values of the same
+    type:
 
     >>> TYPEMAP["CCC"] = AaaConfig
     >>> TYPEMAP["BBB"] = AaaConfig

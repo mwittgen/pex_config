@@ -198,7 +198,8 @@ class ConfigTest(unittest.TestCase):
                                               inclusiveMax=inclusiveMax)
                 Cfg1()
             else:
-                # raise while constructing the RangeField (hence cannot make it part of a Config)
+                # raise while constructing the RangeField (hence cannot make
+                # it part of a Config)
                 self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=int,
                                   default=val, min=val, max=val, inclusiveMin=inclusiveMin,
                                   inclusiveMax=inclusiveMax)
@@ -259,7 +260,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
-        # test backwards compatibility feature of allowing "root" instead of "config"
+        # test backwards compatibility feature of allowing "root" instead of
+        # "config"
         outfile = open("roundtrip.test", "w")
         self.comp.saveToStream(outfile, root="root")
         outfile.close()
@@ -464,16 +466,17 @@ except ImportError:
         self.assertFalse(self.outer.compare(self.inner))
 
     def testLoadError(self):
-        """Check that loading allows errors in the file being loaded to propagate
+        """Check that loading allows errors in the file being loaded to
+        propagate.
         """
         self.assertRaises(SyntaxError, self.simple.loadFromStream, "bork bork bork")
         self.assertRaises(NameError, self.simple.loadFromStream, "config.f = bork")
 
     def testNames(self):
-        """Check that the names() method returns valid keys
+        """Check that the names() method returns valid keys.
 
         Also check that we have the right number of keys, and as they are
-        all known to be valid we know that we got them all
+        all known to be valid we know that we got them all.
         """
 
         names = self.simple.names()
