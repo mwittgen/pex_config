@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -110,8 +116,8 @@ class DictFieldTest(unittest.TestCase):
     def testEquality(self):
         """Test DictField.__eq__
 
-        We create two dicts, with the keys explicitly added in a different order
-        and test their equality.
+        We create two dicts, with the keys explicitly added in a different
+        order and test their equality.
         """
         keys1 = ['A', 'B', 'C']
         keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']

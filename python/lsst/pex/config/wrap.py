@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -87,13 +93,15 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
        // myHeader.h
 
        struct InnerControl {
-           LSST_CONTROL_FIELD(wim, std::string, "documentation for field 'wim'");
+           LSST_CONTROL_FIELD(wim, std::string,
+                              "documentation for field 'wim'");
        };
 
        struct FooControl {
            LSST_CONTROL_FIELD(bar, int, "documentation for field 'bar'");
            LSST_CONTROL_FIELD(baz, double, "documentation for field 'baz'");
-           LSST_NESTED_CONTROL_FIELD(zot, myWrappedLib, InnerControl, "documentation for field 'zot'");
+           LSST_NESTED_CONTROL_FIELD(zot, myWrappedLib, InnerControl,
+                                     "documentation for field 'zot'");
 
            FooControl() : bar(0), baz(0.0) {}
        };
@@ -149,8 +157,9 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
     if cls is None:
         cls = type(name, (base,), {"__doc__": doc})
         if module is not None:
-            # Not only does setting __module__ make Python pretty-printers more useful,
-            # it's also necessary if we want to pickle Config objects.
+            # Not only does setting __module__ make Python pretty-printers
+            # more useful, it's also necessary if we want to pickle Config
+            # objects.
             if isinstance(module, int):
                 frame = getCallerFrame(module)
                 moduleObj = inspect.getmodule(frame)
@@ -171,8 +180,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
     if doc is None:
         doc = ctrl.__doc__
     fields = {}
-    # loop over all class attributes, looking for the special static methods that indicate a field
-    # defined by one of the macros in pex/config.h.
+    # loop over all class attributes, looking for the special static methods
+    # that indicate a field defined by one of the macros in pex/config.h.
     for attr in dir(ctrl):
         if attr.startswith("_type_"):
             k = attr[len("_type_"):]
@@ -207,8 +216,9 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
                         raise TypeError("Could not parse field type '%s'." % ctype)
                     fields[k] = FieldCls(doc=doc, dtype=dtype, optional=True)
 
-    # Define a number of methods to put in the new Config class.  Note that these are "closures";
-    # they have access to local variables defined in the makeConfigClass function (like the fields dict).
+    # Define a number of methods to put in the new Config class.  Note that
+    # these are "closures"; they have access to local variables defined in
+    # the makeConfigClass function (like the fields dict).
     def makeControl(self):
         """Construct a C++ Control object from this Config object.
 
@@ -269,7 +279,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
         super(cls, self).setDefaults()
         try:
             r = self.Control()
-            # Indicate in the history that these values came from C++, even if we can't say which line
+            # Indicate in the history that these values came from C++, even
+            # if we can't say which line
             self.readControl(r, __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")], __label="defaults",
                              __reset=True)
         except Exception:

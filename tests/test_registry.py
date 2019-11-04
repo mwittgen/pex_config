@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +31,8 @@ import lsst.pex.config as pexConfig
 
 class ConfigTest(unittest.TestCase):
     def setUp(self):
-        """Note: the classes are defined here in order to test the register decorator
+        """Note: the classes are defined here in order to test the register
+        decorator.
         """
         class ParentConfig(pexConfig.Config):
             pass
@@ -99,7 +106,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.registry["foo1"], self.fooAlg1Class)
 
     def testNesting(self):
-        """Make sure nesting a config with a RegistryField doesn't deep-copy the registry."""
+        """Make sure nesting a config with a RegistryField doesn't deep-copy
+        the registry."""
         class MidConfig(pexConfig.Config):
             field = self.registry.makeField("docs for registry field")
 

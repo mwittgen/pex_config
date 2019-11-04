@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -192,7 +198,8 @@ class ConfigTest(unittest.TestCase):
                                               inclusiveMax=inclusiveMax)
                 Cfg1()
             else:
-                # raise while constructing the RangeField (hence cannot make it part of a Config)
+                # raise while constructing the RangeField (hence cannot make
+                # it part of a Config)
                 self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=int,
                                   default=val, min=val, max=val, inclusiveMin=inclusiveMin,
                                   inclusiveMax=inclusiveMax)
@@ -253,7 +260,8 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
-        # test backwards compatibility feature of allowing "root" instead of "config"
+        # test backwards compatibility feature of allowing "root" instead of
+        # "config"
         outfile = open("roundtrip.test", "w")
         self.comp.saveToStream(outfile, root="root")
         outfile.close()
@@ -458,16 +466,17 @@ except ImportError:
         self.assertFalse(self.outer.compare(self.inner))
 
     def testLoadError(self):
-        """Check that loading allows errors in the file being loaded to propagate
+        """Check that loading allows errors in the file being loaded to
+        propagate.
         """
         self.assertRaises(SyntaxError, self.simple.loadFromStream, "bork bork bork")
         self.assertRaises(NameError, self.simple.loadFromStream, "config.f = bork")
 
     def testNames(self):
-        """Check that the names() method returns valid keys
+        """Check that the names() method returns valid keys.
 
         Also check that we have the right number of keys, and as they are
-        all known to be valid we know that we got them all
+        all known to be valid we know that we got them all.
         """
 
         names = self.simple.names()

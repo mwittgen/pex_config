@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -129,7 +135,8 @@ class ConfigurableInstance:
     def __setattr__(self, name, value, at=None, label="assignment"):
         """Pretend to be an instance of ConfigClass.
 
-        Attributes defined by ConfigurableInstance will shadow those defined in ConfigClass
+        Attributes defined by ConfigurableInstance will shadow those defined
+        in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
@@ -145,7 +152,8 @@ class ConfigurableInstance:
     def __delattr__(self, name, at=None, label="delete"):
         """
         Pretend to be an isntance of  ConfigClass.
-        Attributes defiend by ConfigurableInstance will shadow those defined in ConfigClass
+        Attributes defiend by ConfigurableInstance will shadow those defined
+        in ConfigClass
         """
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")

@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -36,8 +42,8 @@ class HistoryTest(unittest.TestCase):
         output = b.formatHistory("a", writeSourceLine=False)
 
         # The history differs depending on how the tests are executed and might
-        # depend on pytest internals. We therefore test the output for the presence
-        # of strings that we know should be there.
+        # depend on pytest internals. We therefore test the output for the
+        # presence of strings that we know should be there.
 
         # For reference, this is the output from running with unittest.main()
         """a

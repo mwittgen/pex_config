@@ -6,6 +6,12 @@
 # See the COPYRIGHT file at the top-level directory of this distribution
 # for details of code ownership.
 #
+# This software is dual licensed under the GNU General Public License and also
+# under a 3-clause BSD license. Recipients may choose which of these licenses
+# to use; please see the files gpl-3.0.txt and/or bsd_license.txt,
+# respectively.  If you choose the GPL option then the following text applies
+# (but note that there is still no warranty even if you opt for BSD instead):
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -453,7 +459,8 @@ class Field:
         if self.deprecated and value == self.default:
             return
 
-        # write full documentation string as comment lines (i.e. first character is #)
+        # write full documentation string as comment lines
+        # (i.e. first character is #)
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
             # non-finite numbers need special care
@@ -862,7 +869,8 @@ class Config(metaclass=ConfigMeta):
         since it may contain lambdas (as the ``check`` elements) that cannot
         be pickled.
         """
-        # The stream must be in characters to match the API but pickle requires bytes
+        # The stream must be in characters to match the API but pickle
+        # requires bytes
         stream = io.StringIO()
         self.saveToStream(stream)
         return (unreduceConfig, (self.__class__, stream.getvalue().encode()))
@@ -1015,7 +1023,8 @@ class Config(metaclass=ConfigMeta):
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
                     if filename is None:
-                        # try to determine the file name; a compiled string has attribute "co_filename",
+                        # try to determine the file name; a compiled string
+                        # has attribute "co_filename",
                         # an open file has attribute "name", else give up
                         filename = getattr(stream, "co_filename", None)
                         if filename is None:
@@ -1122,9 +1131,10 @@ class Config(metaclass=ConfigMeta):
     def _collectImports(self):
         """Adds module containing self to the list of things to import and
         then loops over all the fields in the config calling a corresponding
-        collect method. The field method will call _collectImports on any configs
-        it may own and return the set of things to import. This returned set
-        will be merged with the set of imports for this config class.
+        collect method. The field method will call _collectImports on any
+        configs it may own and return the set of things to import. This
+        returned set will be merged with the set of imports for this config
+        class.
         """
         self._imports.add(self.__module__)
         for name, field in self._fields.items():
