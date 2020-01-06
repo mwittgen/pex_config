@@ -1286,7 +1286,7 @@ class Config(metaclass=ConfigMeta):
             if self._fields[attr].deprecated is not None:
                 fullname = _joinNamePath(self._name, self._fields[attr].name)
                 warnings.warn(f"Config field {fullname} is deprecated: {self._fields[attr].deprecated}",
-                              FutureWarning)
+                              FutureWarning, stacklevel=2)
             if at is None:
                 at = getCallStack()
             # This allows Field descriptors to work.
