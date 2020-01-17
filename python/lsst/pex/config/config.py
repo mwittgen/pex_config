@@ -1070,7 +1070,7 @@ class Config(metaclass=ConfigMeta):
             # os.rename may not work across filesystems
             shutil.move(outfile.name, filename)
 
-    def saveToStream(self, outfile, root="config"):
+    def saveToStream(self, outfile, root="config", skipImports=False):
         """Save a configuration file to a stream, which, when loaded,
         reproduces this config.
 
@@ -1082,6 +1082,10 @@ class Config(metaclass=ConfigMeta):
         root
             Name to use for the root config variable. The same value must be
             used when loading (see `lsst.pex.config.Config.load`).
+        skipImports : `bool`, optional
+            If `True` then do not include ``import`` statements in output,
+            this is to support human-oriented output from ``pipetask`` where
+            additional clutter is not useful.
 
         See also
         --------
@@ -1092,19 +1096,18 @@ class Config(metaclass=ConfigMeta):
         tmp = self._name
         self._rename(root)
         try:
-            self._collectImports()
-            # Remove self from the set, as it is handled explicitly below
-            self._imports.remove(self.__module__)
-            configType = type(self)
-            typeString = _typeStr(configType)
-            outfile.write(u"import {}\n".format(configType.__module__))
-            outfile.write(u"assert type({})=={}, 'config is of type %s.%s ".format(root, typeString))
-            outfile.write(u"instead of {}' % (type({}).__module__, type({}).__name__)\n".format(typeString,
-                                                                                                root,
-                                                                                                root))
-            for imp in self._imports:
-                if imp in sys.modules and sys.modules[imp] is not None:
-                    outfile.write(u"import {}\n".format(imp))
+            if not skipImports:
+                self._collectImports()
+                # Remove self from the set, as it is handled explicitly below
+                self._imports.remove(self.__module__)
+                configType = type(self)
+                typeString = _typeStr(configType)
+                outfile.write(f"import {configType.__module__}\n")
+                outfile.write(f"assert type({root})=={typeString}, 'config is of type %s.%s instead of "
+                              f"{typeString}' % (type({root}).__module__, type({root}).__name__)\n")
+                for imp in self._imports:
+                    if imp in sys.modules and sys.modules[imp] is not None:
+                        outfile.write(u"import {}\n".format(imp))
             self._save(outfile)
         finally:
             self._rename(tmp)
