@@ -52,6 +52,9 @@ class ChoiceField(Field):
         choices.
     optional : `bool`, optional
         If `True`, this configuration field is *optional*. Default is `True`.
+    deprecated : None or `str`, optional
+        A description of why this Field is deprecated, including removal date.
+        If not None, the string is appended to the docstring for this Field.
 
     See also
     --------
@@ -65,7 +68,7 @@ class ChoiceField(Field):
     RangeField
     RegistryField
     """
-    def __init__(self, doc, dtype, allowed, default=None, optional=True):
+    def __init__(self, doc, dtype, allowed, default=None, optional=True, deprecated=None):
         self.allowed = dict(allowed)
         if optional and None not in self.allowed:
             self.allowed[None] = "Field is optional"
@@ -74,7 +77,7 @@ class ChoiceField(Field):
             raise ValueError("ChoiceFields must allow at least one choice")
 
         Field.__init__(self, doc=doc, dtype=dtype, default=default,
-                       check=None, optional=optional)
+                       check=None, optional=optional, deprecated=deprecated)
 
         self.__doc__ += "\n\nAllowed values:\n\n"
         for choice, choiceDoc in self.allowed.items():
