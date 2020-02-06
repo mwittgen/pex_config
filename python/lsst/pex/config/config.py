@@ -981,7 +981,7 @@ class Config(metaclass=ConfigMeta):
         """
         with open(filename, "r") as f:
             code = compile(f.read(), filename=filename, mode="exec")
-            self.loadFromStream(stream=code, root=root)
+            self.loadFromStream(stream=code, root=root, filename=filename)
 
     def loadFromStream(self, stream, root="config", filename=None):
         """Modify this Config in place by executing the Python code in the
@@ -1017,9 +1017,10 @@ class Config(metaclass=ConfigMeta):
         lsst.pex.config.Config.saveFromStream
         """
         with RecordingImporter() as importer:
+            globals = {"__file__": filename}
             try:
                 local = {root: self}
-                exec(stream, {}, local)
+                exec(stream, globals, local)
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
                     if filename is None:
@@ -1032,7 +1033,7 @@ class Config(metaclass=ConfigMeta):
                     print(f"Config override file {filename!r}"
                           " appears to use 'root' instead of 'config'; trying with 'root'", file=sys.stderr)
                     local = {"root": self}
-                    exec(stream, {}, local)
+                    exec(stream, globals, local)
                 else:
                     raise
 
