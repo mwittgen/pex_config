@@ -145,3 +145,25 @@ This is useful to expose bugs that change configuration values after none should
 
 Finally, the contents of `Config` objects may easily be dumped, for provenance or debugging purposes.
 See :doc:`inspecting-configs` for details.
+
+Referencing Other Configuration Files
+=====================================
+
+In some cases you would like to load other config files from a config file.
+You can do this by using the ``__file__`` special variable just like any other Python code.
+This variable contains the path to this config file and therefore the enclosing directory can be located by using ``os.path``:
+
+.. code-block:: python
+
+   import os.path
+   configDir = os.path.dirname(__file__)
+   config.load(os.path.join(configDir, "otherconfig.py"))
+
+Alternatively, if you wish to locate another configuration file using LSST infrastructure you can do the following:
+
+.. code-block:: python
+
+   import os.path
+   from lsst.utils import getPackageDir
+
+   config.load(os.path.join(getPackageDir("product_x"), "config", "otherconfig.py"))
