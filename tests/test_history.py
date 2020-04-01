@@ -68,15 +68,12 @@ class HistoryTest(unittest.TestCase):
     b.update(a=4.0)"""
 
         self.assertTrue(output.startswith("a\n1.0"))
-        self.assertIn("""return self.run(*args, **kwds)
-    testMethod()
+        self.assertIn("""
     b = PexTestConfig()
     a = pexConfig.Field('Parameter A', float, default=1.0)
 4.0""", output)
 
-        self.assertIn("""    return self.run(*args, **kwds)
-    testMethod()
-    b.update(a=4.0)""", output)
+        self.assertIn("\n    b.update(a=4.0)", output)
 
 
 if __name__ == "__main__":
