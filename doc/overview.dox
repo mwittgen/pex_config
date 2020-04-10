@@ -260,11 +260,6 @@ After using SWIG, the preferred way to create the  Config is via the
 
 \section Notes
 
-\subsection pexConfigConvert Relationship to lsst::pex::policy
-
-The  Policy and  PolicyDictionary classes in the lsst::pex::policy package provided many of the features of lsst::pex::config in C++ and, via SWIG wrapping, Python.  lsst::pex::config was developed to provide additional features and remove some shortcomings.  lsst::pex::policy is being replaced with lsst::pex::config in the LSST DMS codebase; to aid the transition a utility function is provided to convert a  Config to a  Policy.
-
-
 \subsection pexConfigArchitecture Architecture
  Config uses a metaclass to record the  Field attributes within each Config object in an internal dictionary.  The storage and history for the fields is also maintained in the  Config, not the  Field itself.  This allows  Fields to be inherited without difficulty.
 

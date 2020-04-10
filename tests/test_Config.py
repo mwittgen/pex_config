@@ -34,16 +34,12 @@ import unittest
 
 import lsst.pex.config as pexConfig
 
-# Some tests depend on daf_base or pex_policy.
-# Skip them if they are not found.
+# Some tests depend on daf_base.
+# Skip them if it is not found.
 try:
     import lsst.daf.base as dafBase
 except ImportError:
     dafBase = None
-try:
-    import lsst.pex.policy as pexPolicy
-except ImportError:
-    pexPolicy = None
 
 GLOBAL_REGISTRY = {}
 
@@ -331,20 +327,6 @@ class ConfigTest(unittest.TestCase):
 
         self.assertEqual(III.a.default, 5)
         self.assertEqual(AAA.a.default, 4)
-
-    @unittest.skipIf(pexPolicy is None, "lsst.pex.policy is required")
-    def testConvertPolicy(self):
-        with self.assertWarns(FutureWarning):
-            pol = pexConfig.makePolicy(self.simple)
-        self.assertFalse(pol.exists("i"))
-        self.assertEqual(pol.get("f"), self.simple.f)
-        self.assertEqual(pol.get("b"), self.simple.b)
-        self.assertEqual(pol.get("c"), self.simple.c)
-        self.assertEqual(pol.getArray("ll"), list(self.simple.ll))
-
-        with self.assertWarns(FutureWarning):
-            pol = pexConfig.makePolicy(self.comp)
-        self.assertEqual(pol.get("c.f"), self.comp.c.f)
 
     @unittest.skipIf(dafBase is None, "lsst.daf.base is required")
     def testConvertPropertySet(self):

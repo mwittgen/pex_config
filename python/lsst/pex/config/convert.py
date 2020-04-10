@@ -25,14 +25,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('makePropertySet', 'makePolicy')
-
-from deprecated.sphinx import deprecated
-
-try:
-    import lsst.pex.policy as pexPolicy
-except ImportError:
-    pexPolicy = None
+__all__ = ('makePropertySet',)
 
 try:
     import lsst.daf.base as dafBase
@@ -57,7 +50,6 @@ def makePropertySet(config):
 
     See also
     --------
-    makePolicy
     lsst.daf.base.PropertySet
     """
     if dafBase is None:
@@ -75,46 +67,5 @@ def makePropertySet(config):
         ps = dafBase.PropertySet()
         _helper(ps, None, config.toDict())
         return ps
-    else:
-        return None
-
-
-@deprecated("pex_policy is deprecated, prefer makePropertySet (will be removed after v19)",
-            category=FutureWarning)
-def makePolicy(config):
-    """Convert a configuration into a `lsst.pex.policy.Policy`.
-
-    Parameters
-    ----------
-    config : `lsst.pex.config.Config`
-        Configuration instance.
-
-    Returns
-    -------
-    policy : `lsst.pex.policy.Policy`
-        A `~lsst.pex.policy.Policy` that is equivalent to the ``config``
-        instance. If ``config`` is `None` then return value is also `None`.
-
-    See also
-    --------
-    makePropertySet
-    lsst.pex.policy.Policy
-    """
-    if pexPolicy is None:
-        raise RuntimeError("lsst.pex.policy is not available")
-
-    def _helper(dict_):
-        p = pexPolicy.Policy()
-        for k, v in dict_.items():
-            if isinstance(v, dict):
-                p.set(k, _helper(v))
-            elif isinstance(v, list):
-                for vi in v:
-                    p.add(k, vi)
-            elif v is not None:
-                p.set(k, v)
-        return p
-    if config:
-        return _helper(config.toDict())
     else:
         return None
