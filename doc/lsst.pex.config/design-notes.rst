@@ -37,16 +37,6 @@ Design goals
 
 - Support lists of parameter values.
 
-Relationship to pex\_policy
-===========================
-
-The `lsst.pex.Policy` and `lsst.pex.PolicyDictionary` classes in the `pex_policy`_ package provided many of the features of `pex_config`_ in C++ and, via SWIG wrapping, Python.
-`pex_config`_ (which contains the :ref:`lsst.pex.config` module) was developed to provide additional features and remove
-some shortcomings.
-
-`pex_policy`_ is being replaced with `pex_config`_ in the LSST Data Management System codebase.
-To aid the transition, the `makePolicy` a utility function converts a `Config` to a `~lsst.pex.policy.Policy`.
-
 Architecture
 ============
 
@@ -55,4 +45,3 @@ The storage and history for the fields is also maintained in the `Config` object
 This allows `Field` classes to be easily inherited.
 
 .. _pex_config: https://github.com/lsst/pex_config
-.. _pex_policy: https://github.com/lsst/pex_policy
