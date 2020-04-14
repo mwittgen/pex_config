@@ -106,6 +106,18 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.config.a, "name", "AAA")
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.config.a["AAA"], "f", "1")
 
+        # Create a new unfrozen config
+        unfrozenConfig = Config3()
+
+        # Add a new entries to the typemap after the config is frozen and check
+        # that it is not in the frozen configs keys
+        TYPEMAP["DDD"] = Config1
+        self.assertNotIn("DDD", self.config.a.keys())
+
+        # Verify that the entry added to the typemap does show up in the
+        # unfrozen config
+        self.assertIn("DDD", unfrozenConfig.a.keys())
+
     def testNoArbitraryAttributes(self):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.config.a, "should", "fail")
 
