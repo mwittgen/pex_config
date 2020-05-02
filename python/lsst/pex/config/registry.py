@@ -241,7 +241,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         if self._field.multi:
             raise FieldValidationError(self._field, self._config,
                                        "Multi-selection field has no attribute 'target'")
-        return self._field.typemap.registry[self._selection]
+        return self.types.registry[self._selection]
 
     target = property(_getTarget)
 
@@ -249,7 +249,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         if not self._field.multi:
             raise FieldValidationError(self._field, self._config,
                                        "Single-selection field has no attribute 'targets'")
-        return [self._field.typemap.registry[c] for c in self._selection]
+        return [self.types.registry[c] for c in self._selection]
 
     targets = property(_getTargets)
 
@@ -263,15 +263,15 @@ class RegistryInstanceDict(ConfigInstanceDict):
         """
         if self.active is None:
             msg = "No selection has been made.  Options: %s" % \
-                (" ".join(list(self._field.typemap.registry.keys())))
+                " ".join(self.types.registry.keys())
             raise FieldValidationError(self._field, self._config, msg)
         if self._field.multi:
             retvals = []
             for c in self._selection:
-                retvals.append(self._field.typemap.registry[c](*args, config=self[c], **kw))
+                retvals.append(self.types.registry[c](*args, config=self[c], **kw))
             return retvals
         else:
-            return self._field.typemap.registry[self.name](*args, config=self[self.name], **kw)
+            return self.types.registry[self.name](*args, config=self[self.name], **kw)
 
     def __setattr__(self, attr, value):
         if attr == "registry":

@@ -153,17 +153,20 @@ class ConfigInstanceDict(collections.abc.Mapping):
         self._field = field
         self._history = config._history.setdefault(field.name, [])
         self.__doc__ = field.doc
+        self._typemap = None
 
-    types = property(lambda x: x._field.typemap)
+    @property
+    def types(self):
+        return self._typemap if self._typemap is not None else self._field.typemap
 
     def __contains__(self, k):
-        return k in self._field.typemap
+        return k in self.types
 
     def __len__(self):
-        return len(self._field.typemap)
+        return len(self.types)
 
     def __iter__(self):
-        return iter(self._field.typemap)
+        return iter(self.types)
 
     def _setSelection(self, value, at=None, label="assignment"):
         if self._config._frozen:
@@ -251,7 +254,7 @@ class ConfigInstanceDict(collections.abc.Mapping):
             value = self._dict[k]
         except KeyError:
             try:
-                dtype = self._field.typemap[k]
+                dtype = self.types[k]
             except Exception:
                 raise FieldValidationError(self._field, self._config,
                                            "Unknown key %r in Registry/ConfigChoiceField" % k)
@@ -267,7 +270,7 @@ class ConfigInstanceDict(collections.abc.Mapping):
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
         try:
-            dtype = self._field.typemap[k]
+            dtype = self.types[k]
         except Exception:
             raise FieldValidationError(self._field, self._config, "Unknown key %r" % k)
 
@@ -299,13 +302,23 @@ class ConfigInstanceDict(collections.abc.Mapping):
             # This allows properties to work.
             object.__setattr__(self, attr, value)
         elif attr in self.__dict__ or attr in ["_history", "_field", "_config", "_dict",
-                                               "_selection", "__doc__"]:
+                                               "_selection", "__doc__", "_typemap"]:
             # This allows specific private attributes to work.
             object.__setattr__(self, attr, value)
         else:
             # We throw everything else.
             msg = "%s has no attribute %s" % (_typeStr(self._field), attr)
             raise FieldValidationError(self._field, self._config, msg)
+
+    def freeze(self):
+        """Invoking this freeze method will create a local copy of the field
+        attribute's typemap. This decouples this instance dict from the
+        underlying objects type map ensuring that and subsequent changes to the
+        typemap will not be reflected in this instance (i.e imports adding
+        additional registry entries).
+        """
+        if self._typemap is None:
+            self._typemap = copy.deepcopy(self.types)
 
 
 class ConfigChoiceField(Field):
@@ -488,11 +501,8 @@ class ConfigChoiceField(Field):
         return dict_
 
     def freeze(self, instance):
-        # When a config is frozen it should not be affected by anything further
-        # being added to a registry, so create a deep copy of the registry
-        # typemap
-        self.typemap = copy.deepcopy(self.typemap)
         instanceDict = self.__get__(instance)
+        instanceDict.freeze()
         for v in instanceDict.values():
             v.freeze()
 
