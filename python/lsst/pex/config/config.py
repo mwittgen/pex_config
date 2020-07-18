@@ -37,8 +37,29 @@ import tempfile
 import shutil
 import warnings
 
+# if YAML is not available that's fine and we simply don't register
+# the yaml representer since we know it won't be used.
+try:
+    import yaml
+    # doImport is needed to preimport the Config class on yaml load
+    from lsst.utils import doImport
+except ImportError:
+    yaml = None
+    YamlLoaders = ()
+    doImport = None
+
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getStackFrame, getCallStack
+
+if yaml:
+    YamlLoaders = (yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader)
+
+    try:
+        # CLoader is not always available
+        from yaml import CLoader
+        YamlLoaders += (CLoader,)
+    except ImportError:
+        pass
 
 
 def _joinNamePath(prefix=None, name=None, index=None):
@@ -100,6 +121,52 @@ def _typeStr(x):
         return xtype.__name__
     else:
         return "%s.%s" % (xtype.__module__, xtype.__name__)
+
+
+if yaml:
+    def _yaml_config_representer(dumper, data):
+        """Represent a Config object in a form suitable for YAML.
+
+        Stores the serialized stream as a mapping with the
+        specific subclass name and the config Python as a block string.
+        """
+        stream = io.StringIO()
+        data.saveToStream(stream)
+        config = stream.getvalue()
+
+        # Strip multiple newlines from the end of the config
+        # This simplifies the YAML to use | and not |+
+        config = re.sub("\n+$", "\n", config)
+
+        # Can not use represent_mapping because that does not yet us choose
+        # the style parameter for controlling the config representation in the
+        # output YAML.  We want to use "|" style so we have to create the
+        # ScalarNode ourself along with the MappingNode.
+        value = []
+        node = yaml.MappingNode("lsst.pex.config.Config", value)
+
+        # The values in a mapping nodes are tuples of key and value
+        value.append((dumper.represent_data("cls"),
+                      dumper.represent_data(_typeStr(data))))
+
+        # Create the node for the key and then ensure we use the same tag for
+        # the config itself since it should be a normal str
+        configNodeKey = dumper.represent_data("config")
+        configNodeStream = dumper.represent_scalar(configNodeKey.tag, config, style="|")
+        value.append((configNodeKey, configNodeStream))
+
+        return node
+
+    def _yaml_config_constructor(loader, node):
+        """Construct a config from YAML"""
+        mapping = loader.construct_mapping(node)
+        cls = doImport(mapping["cls"])
+        return unreduceConfig(cls, mapping["config"])
+
+    # Register a generic constructor for Config and all subclasses
+    # Need to register for all the loaders we would like to use
+    for loader in YamlLoaders:
+        yaml.add_constructor("lsst.pex.config.Config", _yaml_config_constructor, Loader=loader)
 
 
 class ConfigMeta(type):
@@ -1381,6 +1448,20 @@ class Config(metaclass=ConfigMeta):
         name = getComparisonName(name1, name2)
         return compareConfigs(name, self, other, shortcut=shortcut,
                               rtol=rtol, atol=atol, output=output)
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        """Run initialization for every subclass.
+
+        Specifically registers the subclass with a YAML representer
+        and YAML constructor (if pyyaml is available)
+        """
+        super().__init_subclass__(**kwargs)
+
+        if not yaml:
+            return
+
+        yaml.add_representer(cls, _yaml_config_representer)
 
 
 def unreduceConfig(cls, stream):

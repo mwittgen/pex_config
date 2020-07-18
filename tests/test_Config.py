@@ -32,6 +32,11 @@ import os
 import pickle
 import unittest
 
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
 import lsst.pex.config as pexConfig
 
 # Some tests depend on daf_base.
@@ -392,6 +397,19 @@ except ImportError:
 
         self.comp.c.f = 5
         comp = pickle.loads(pickle.dumps(self.comp))
+        self.assertIsInstance(comp, Complex)
+        self.assertEqual(self.comp.c.f, comp.c.f)
+
+    @unittest.skipIf(yaml is None, "Test requires pyyaml")
+    def testYaml(self):
+        self.simple.f = 5
+        simple = yaml.safe_load(yaml.dump(self.simple))
+        self.assertIsInstance(simple, Simple)
+        self.assertEqual(self.simple.f, simple.f)
+
+        self.comp.c.f = 5
+        # Use a different loader to check that it also works
+        comp = yaml.load(yaml.dump(self.comp), Loader=yaml.FullLoader)
         self.assertIsInstance(comp, Complex)
         self.assertEqual(self.comp.c.f, comp.c.f)
 
