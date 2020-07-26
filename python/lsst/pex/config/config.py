@@ -529,7 +529,7 @@ class Field:
         # write full documentation string as comment lines
         # (i.e. first character is #)
         doc = "# " + str(self.doc).replace("\n", "\n# ")
-        if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
+        if isinstance(value, float) and not math.isfinite(value):
             # non-finite numbers need special care
             outfile.write(u"{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
         else:
