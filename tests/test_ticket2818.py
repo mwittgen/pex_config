@@ -25,15 +25,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
 import io
 import unittest
 
-# Extend path to find the helper code for this test relative to the test file
-sys.path = [os.path.join(os.path.abspath(os.path.dirname(__file__)), "ticket2818helper")] + sys.path
-
-from ticket2818helper.define import BaseConfig  # noqa E402 module level import not at top of file
+from ticket2818helper.define import BaseConfig
 
 
 class ImportTest(unittest.TestCase):
