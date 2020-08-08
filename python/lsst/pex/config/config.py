@@ -28,6 +28,7 @@
 __all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError")
 
 import io
+import importlib
 import os
 import re
 import sys
@@ -41,8 +42,6 @@ import warnings
 # the yaml representer since we know it won't be used.
 try:
     import yaml
-    # doImport is needed to preimport the Config class on yaml load
-    from lsst.utils import doImport
 except ImportError:
     yaml = None
     YamlLoaders = ()
@@ -127,41 +126,23 @@ if yaml:
     def _yaml_config_representer(dumper, data):
         """Represent a Config object in a form suitable for YAML.
 
-        Stores the serialized stream as a mapping with the
-        specific subclass name and the config Python as a block string.
+        Stores the serialized stream as a scalar block string.
         """
         stream = io.StringIO()
         data.saveToStream(stream)
-        config = stream.getvalue()
+        config_py = stream.getvalue()
 
         # Strip multiple newlines from the end of the config
         # This simplifies the YAML to use | and not |+
-        config = re.sub("\n+$", "\n", config)
+        config_py = re.sub("\n+$", "\n", config_py)
 
-        # Can not use represent_mapping because that does not yet us choose
-        # the style parameter for controlling the config representation in the
-        # output YAML.  We want to use "|" style so we have to create the
-        # ScalarNode ourself along with the MappingNode.
-        value = []
-        node = yaml.MappingNode("lsst.pex.config.Config", value)
-
-        # The values in a mapping nodes are tuples of key and value
-        value.append((dumper.represent_data("cls"),
-                      dumper.represent_data(_typeStr(data))))
-
-        # Create the node for the key and then ensure we use the same tag for
-        # the config itself since it should be a normal str
-        configNodeKey = dumper.represent_data("config")
-        configNodeStream = dumper.represent_scalar(configNodeKey.tag, config, style="|")
-        value.append((configNodeKey, configNodeStream))
-
-        return node
+        # Store the Python as a simple scalar
+        return dumper.represent_scalar("lsst.pex.config.Config", config_py, style="|")
 
     def _yaml_config_constructor(loader, node):
         """Construct a config from YAML"""
-        mapping = loader.construct_mapping(node)
-        cls = doImport(mapping["cls"])
-        return unreduceConfig(cls, mapping["config"])
+        config_py = loader.construct_scalar(node)
+        return Config._fromPython(config_py)
 
     # Register a generic constructor for Config and all subclasses
     # Need to register for all the loaders we would like to use
@@ -1462,6 +1443,73 @@ class Config(metaclass=ConfigMeta):
             return
 
         yaml.add_representer(cls, _yaml_config_representer)
+
+    @classmethod
+    def _fromPython(cls, config_py):
+        """Instantiate a `Config`-subclass from serialized Python form.
+
+        Parameters
+        ----------
+        config_py : `str`
+            A serialized form of the Config as created by
+            `Config.saveToStream`.
+
+        Returns
+        -------
+        config : `Config`
+            Reconstructed `Config` instant.
+        """
+        cls = _classFromPython(config_py)
+        return unreduceConfig(cls, config_py)
+
+
+def _classFromPython(config_py):
+    """Return the Config subclass required by this Config serialization.
+
+    Parameters
+    ----------
+    config_py : `str`
+        A serialized form of the Config as created by
+        `Config.saveToStream`.
+
+    Returns
+    -------
+    cls : `type`
+        The `Config` subclass associated with this config.
+    """
+    # standard serialization has the form:
+    #     import config.class
+    #     assert type(config)==config.class.Config, ...
+    # We want to parse these two lines so we can get the class itself
+    lines = config_py.split("\n")
+    first_line = lines[0]
+    if not first_line.startswith("import"):
+        raise ValueError(f"Expected import at start of serialized config but got: {first_line}")
+
+    _, module_name = first_line.split(maxsplit=1)
+    module = importlib.import_module(module_name)
+
+    # Second line
+    second_line = lines[1]
+    full_name_re = re.search(r"==(.*?),", second_line)
+    if not full_name_re:
+        raise ValueError(f"Expected assert in line 2 but got: {second_line}")
+
+    full_name = full_name_re.group(1)
+
+    # Remove the module name from the full name
+    if not full_name.startswith(module_name):
+        raise ValueError(f"Module name ({module_name}) inconsistent with full name ({full_name})")
+
+    # if module name is a.b.c and full name is a.b.c.d.E then
+    # we need to remove a.b.c. and iterate over the remainder
+    # The +1 is for the extra dot after a.b.c
+    remainder = full_name[len(module_name)+1:]
+    components = remainder.split(".")
+    pytype = module
+    for component in components:
+        pytype = getattr(pytype, component)
+    return pytype
 
 
 def unreduceConfig(cls, stream):

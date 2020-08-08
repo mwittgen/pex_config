@@ -46,9 +46,7 @@ import lsst.pex.config  # noqa: F401
 # print(yaml.dump(c))
 
 serialized = """
-!<lsst.pex.config.Config>
-cls: ticketDM26008helper.unloaded.Unloaded
-config: |
+!<lsst.pex.config.Config> |
   import ticketDM26008helper.unloaded
   assert type(config)==ticketDM26008helper.unloaded.Unloaded, 'config is of type %s.%s instead of ticketDM26008helper.unloaded.Unloaded' % (type(config).__module__, type(config).__name__)
   # integer test
