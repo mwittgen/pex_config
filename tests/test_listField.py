@@ -29,12 +29,12 @@ import unittest
 import lsst.pex.config as pexConfig
 
 
-def isSorted(l):
-    if len(l) <= 1:
+def isSorted(theList):
+    if len(theList) <= 1:
         return True
 
-    p = l[0]
-    for x in l[1:]:
+    p = theList[0]
+    for x in theList[1:]:
         if x < p:
             return False
         p = x
