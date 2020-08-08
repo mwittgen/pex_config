@@ -30,7 +30,10 @@ not previously imported.
 """
 
 import unittest
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 # We have to import the core package to allow the standardized
 # yaml constructor to be registered for all subclasses
@@ -76,6 +79,7 @@ config: |
 
 class UnloadedYaml(unittest.TestCase):
 
+    @unittest.skipIf(yaml is None, "pyyaml not available")
     def testLoadUnloaded(self):
         loaded = yaml.safe_load(serialized)
         self.assertEqual(loaded.c, "World")
