@@ -136,6 +136,10 @@ if yaml:
         # This simplifies the YAML to use | and not |+
         config_py = re.sub("\n+$", "\n", config_py)
 
+        # Trailing spaces force pyyaml to use non-block form.
+        # Remove the trailing spaces so it has no choice
+        config_py = re.sub(r"\s+$", "\n", config_py, flags=re.MULTILINE)
+
         # Store the Python as a simple scalar
         return dumper.represent_scalar("lsst.pex.config.Config", config_py, style="|")
 
