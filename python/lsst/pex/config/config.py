@@ -134,7 +134,7 @@ if yaml:
 
         # Strip multiple newlines from the end of the config
         # This simplifies the YAML to use | and not |+
-        config_py = re.sub("\n+$", "\n", config_py)
+        config_py = config_py.rstrip() + "\n"
 
         # Trailing spaces force pyyaml to use non-block form.
         # Remove the trailing spaces so it has no choice
