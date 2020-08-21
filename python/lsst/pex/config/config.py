@@ -1485,21 +1485,22 @@ def _classFromPython(config_py):
     #     import config.class
     #     assert type(config)==config.class.Config, ...
     # We want to parse these two lines so we can get the class itself
-    lines = config_py.split("\n")
-    first_line = lines[0]
-    if not first_line.startswith("import"):
-        raise ValueError(f"Expected import at start of serialized config but got: {first_line}")
 
-    _, module_name = first_line.split(maxsplit=1)
+    # Do a single regex to avoid large string copies when splitting a
+    # large config into separate lines.
+    matches = re.search(r"^import ([\w.]+)\nassert .*==(.*?),", config_py)
+
+    if not matches:
+        first_line, second_line, _ = config_py.split("\n", 2)
+        raise ValueError("First two lines did not match expected form. Got:\n"
+                         f" - {first_line}\n"
+                         f" - {second_line}")
+
+    module_name = matches.group(1)
     module = importlib.import_module(module_name)
 
     # Second line
-    second_line = lines[1]
-    full_name_re = re.search(r"==(.*?),", second_line)
-    if not full_name_re:
-        raise ValueError(f"Expected assert in line 2 but got: {second_line}")
-
-    full_name = full_name_re.group(1)
+    full_name = matches.group(2)
 
     # Remove the module name from the full name
     if not full_name.startswith(module_name):
