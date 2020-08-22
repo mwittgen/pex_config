@@ -25,25 +25,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import io
-import unittest
-
-from ticket2818helper.define import BaseConfig
+import lsst.pex.config as pexConfig
 
 
-class ImportTest(unittest.TestCase):
-    def test(self):
-        from ticket2818helper.another import AnotherConfigurable  # noqa F401 imported but unused
-        config = BaseConfig()
-        config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
-config.test.retarget(AnotherConfigurable)
-""")
-        stream = io.StringIO()
-        config.saveToStream(stream)
-        values = stream.getvalue()
-        print(values)
-        self.assertIn("import ticket2818helper.another", values)
-
-
-if __name__ == "__main__":
-    unittest.main()
+class Unloaded(pexConfig.Config):
+    i = pexConfig.Field("integer test", int, optional=True)
+    f = pexConfig.Field("float test", float, default=3.0)
+    b = pexConfig.Field("boolean test", bool, default=False, optional=False)
+    c = pexConfig.ChoiceField("choice test", str, default="Hello",
+                              allowed={"Hello": "First choice", "World": "second choice"})
+    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False,
+                             min=3.0, inclusiveMin=True)
+    ll = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
+                             itemCheck=lambda x: x is not None and x > 0)
+    d = pexConfig.DictField("dict test", str, str, default={"key": "value"},
+                            itemCheck=lambda x: x.startswith('v'))
+    n = pexConfig.Field("nan test", float, default=float("NAN"))

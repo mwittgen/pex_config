@@ -28,6 +28,7 @@
 __all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError")
 
 import io
+import importlib
 import os
 import re
 import sys
@@ -37,8 +38,27 @@ import tempfile
 import shutil
 import warnings
 
+# if YAML is not available that's fine and we simply don't register
+# the yaml representer since we know it won't be used.
+try:
+    import yaml
+except ImportError:
+    yaml = None
+    YamlLoaders = ()
+    doImport = None
+
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getStackFrame, getCallStack
+
+if yaml:
+    YamlLoaders = (yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader)
+
+    try:
+        # CLoader is not always available
+        from yaml import CLoader
+        YamlLoaders += (CLoader,)
+    except ImportError:
+        pass
 
 
 def _joinNamePath(prefix=None, name=None, index=None):
@@ -100,6 +120,38 @@ def _typeStr(x):
         return xtype.__name__
     else:
         return "%s.%s" % (xtype.__module__, xtype.__name__)
+
+
+if yaml:
+    def _yaml_config_representer(dumper, data):
+        """Represent a Config object in a form suitable for YAML.
+
+        Stores the serialized stream as a scalar block string.
+        """
+        stream = io.StringIO()
+        data.saveToStream(stream)
+        config_py = stream.getvalue()
+
+        # Strip multiple newlines from the end of the config
+        # This simplifies the YAML to use | and not |+
+        config_py = config_py.rstrip() + "\n"
+
+        # Trailing spaces force pyyaml to use non-block form.
+        # Remove the trailing spaces so it has no choice
+        config_py = re.sub(r"\s+$", "\n", config_py, flags=re.MULTILINE)
+
+        # Store the Python as a simple scalar
+        return dumper.represent_scalar("lsst.pex.config.Config", config_py, style="|")
+
+    def _yaml_config_constructor(loader, node):
+        """Construct a config from YAML"""
+        config_py = loader.construct_scalar(node)
+        return Config._fromPython(config_py)
+
+    # Register a generic constructor for Config and all subclasses
+    # Need to register for all the loaders we would like to use
+    for loader in YamlLoaders:
+        yaml.add_constructor("lsst.pex.config.Config", _yaml_config_constructor, Loader=loader)
 
 
 class ConfigMeta(type):
@@ -462,7 +514,7 @@ class Field:
         # write full documentation string as comment lines
         # (i.e. first character is #)
         doc = "# " + str(self.doc).replace("\n", "\n# ")
-        if isinstance(value, float) and (math.isinf(value) or math.isnan(value)):
+        if isinstance(value, float) and not math.isfinite(value):
             # non-finite numbers need special care
             outfile.write(u"{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
         else:
@@ -1381,6 +1433,88 @@ class Config(metaclass=ConfigMeta):
         name = getComparisonName(name1, name2)
         return compareConfigs(name, self, other, shortcut=shortcut,
                               rtol=rtol, atol=atol, output=output)
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        """Run initialization for every subclass.
+
+        Specifically registers the subclass with a YAML representer
+        and YAML constructor (if pyyaml is available)
+        """
+        super().__init_subclass__(**kwargs)
+
+        if not yaml:
+            return
+
+        yaml.add_representer(cls, _yaml_config_representer)
+
+    @classmethod
+    def _fromPython(cls, config_py):
+        """Instantiate a `Config`-subclass from serialized Python form.
+
+        Parameters
+        ----------
+        config_py : `str`
+            A serialized form of the Config as created by
+            `Config.saveToStream`.
+
+        Returns
+        -------
+        config : `Config`
+            Reconstructed `Config` instant.
+        """
+        cls = _classFromPython(config_py)
+        return unreduceConfig(cls, config_py)
+
+
+def _classFromPython(config_py):
+    """Return the Config subclass required by this Config serialization.
+
+    Parameters
+    ----------
+    config_py : `str`
+        A serialized form of the Config as created by
+        `Config.saveToStream`.
+
+    Returns
+    -------
+    cls : `type`
+        The `Config` subclass associated with this config.
+    """
+    # standard serialization has the form:
+    #     import config.class
+    #     assert type(config)==config.class.Config, ...
+    # We want to parse these two lines so we can get the class itself
+
+    # Do a single regex to avoid large string copies when splitting a
+    # large config into separate lines.
+    matches = re.search(r"^import ([\w.]+)\nassert .*==(.*?),", config_py)
+
+    if not matches:
+        first_line, second_line, _ = config_py.split("\n", 2)
+        raise ValueError("First two lines did not match expected form. Got:\n"
+                         f" - {first_line}\n"
+                         f" - {second_line}")
+
+    module_name = matches.group(1)
+    module = importlib.import_module(module_name)
+
+    # Second line
+    full_name = matches.group(2)
+
+    # Remove the module name from the full name
+    if not full_name.startswith(module_name):
+        raise ValueError(f"Module name ({module_name}) inconsistent with full name ({full_name})")
+
+    # if module name is a.b.c and full name is a.b.c.d.E then
+    # we need to remove a.b.c. and iterate over the remainder
+    # The +1 is for the extra dot after a.b.c
+    remainder = full_name[len(module_name)+1:]
+    components = remainder.split(".")
+    pytype = module
+    for component in components:
+        pytype = getattr(pytype, component)
+    return pytype
 
 
 def unreduceConfig(cls, stream):

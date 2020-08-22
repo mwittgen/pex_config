@@ -19,5 +19,6 @@ doc/doxygen.conf
 tests/.tests
 tests/.cache
 version.py
+build/
 
 roundtrip.test

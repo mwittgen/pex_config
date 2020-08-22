@@ -27,10 +27,15 @@
 
 import unittest
 
-import testLib
+try:
+    import testLib
+except ImportError:
+    testLib = None
+
 import pickle
 
 
+@unittest.skipIf(testLib is None, "C++ tests disabled")
 class WrapTest(unittest.TestCase):
 
     def testMakeControl(self):
@@ -66,6 +71,7 @@ class WrapTest(unittest.TestCase):
         self.assertTrue(new.compare(config))
 
 
+@unittest.skipIf(testLib is None, "C++ tests disabled")
 class NestedWrapTest(unittest.TestCase):
 
     def testMakeControl(self):

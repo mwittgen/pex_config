@@ -25,7 +25,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from ticket2818helper.define import TestConfig, TestConfigurable
+from .define import TestConfig, TestConfigurable
 
 
 class AnotherConfig(TestConfig):
