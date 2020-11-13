@@ -34,7 +34,7 @@ import importlib
 from .config import Config, Field
 from .listField import ListField, List
 from .configField import ConfigField
-from .callStack import getCallerFrame, getCallStack
+from .callStack import getCallerFrame, getCallStack, StackFrame
 
 _dtypeMap = {
     "bool": bool,
@@ -281,8 +281,8 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
             r = self.Control()
             # Indicate in the history that these values came from C++, even
             # if we can't say which line
-            self.readControl(r, __at=[(ctrl.__name__ + " C++", 0, "setDefaults", "")], __label="defaults",
-                             __reset=True)
+            self.readControl(r, __at=[StackFrame(ctrl.__name__ + " C++", 0, "setDefaults", "")],
+                             __label="defaults", __reset=True)
         except Exception:
             pass  # if we can't instantiate the Control, don't set defaults
 
