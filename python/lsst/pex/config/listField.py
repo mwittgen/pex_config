@@ -29,9 +29,11 @@ __all__ = ["ListField"]
 
 import collections.abc
 
-from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
+from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath, Config
 from .comparison import compareScalars, getComparisonName
 from .callStack import getCallStack, getStackFrame
+
+import weakref
 
 
 class List(collections.abc.MutableSequence):
@@ -63,7 +65,7 @@ class List(collections.abc.MutableSequence):
 
     def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
-        self._config = config
+        self._config_ = weakref.ref(config)
         self._history = self._config._history.setdefault(self._field.name, [])
         self._list = []
         self.__doc__ = field.doc
@@ -73,9 +75,16 @@ class List(collections.abc.MutableSequence):
                     self.insert(i, x, setHistory=False)
             except TypeError:
                 msg = "Value %s is of incorrect type %s. Sequence type expected" % (value, _typeStr(value))
-                raise FieldValidationError(self._field, self._config, msg)
+                raise FieldValidationError(self._field, config, msg)
         if setHistory:
             self.history.append((list(self._list), at, label))
+
+    @property
+    def _config(self) -> Config:
+        # Config Fields should never outlive their config class instance
+        # assert that as such here
+        assert(self._config_() is not None)
+        return self._config_()
 
     def validateItem(self, i, x):
         """Validate an item to determine if it can be included in the list.
@@ -204,7 +213,7 @@ class List(collections.abc.MutableSequence):
         if hasattr(getattr(self.__class__, attr, None), '__set__'):
             # This allows properties to work.
             object.__setattr__(self, attr, value)
-        elif attr in self.__dict__ or attr in ["_field", "_config", "_history", "_list", "__doc__"]:
+        elif attr in self.__dict__ or attr in ["_field", "_config_", "_history", "_list", "__doc__"]:
             # This allows specific private attributes to work.
             object.__setattr__(self, attr, value)
         else:

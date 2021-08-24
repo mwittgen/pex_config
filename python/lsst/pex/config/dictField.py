@@ -29,9 +29,11 @@ __all__ = ["DictField"]
 
 import collections.abc
 
-from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath
+from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath, Config
 from .comparison import getComparisonName, compareScalars
 from .callStack import getCallStack, getStackFrame
+
+import weakref
 
 
 class Dict(collections.abc.MutableMapping):
@@ -42,7 +44,7 @@ class Dict(collections.abc.MutableMapping):
 
     def __init__(self, config, field, value, at, label, setHistory=True):
         self._field = field
-        self._config = config
+        self._config_ = weakref.ref(config)
         self._dict = {}
         self._history = self._config._history.setdefault(self._field.name, [])
         self.__doc__ = field.doc
@@ -57,6 +59,13 @@ class Dict(collections.abc.MutableMapping):
                 raise FieldValidationError(self._field, self._config, msg)
         if setHistory:
             self._history.append((dict(self._dict), at, label))
+
+    @property
+    def _config(self) -> Config:
+        # Config Fields should never outlive their config class instance
+        # assert that as such here
+        assert(self._config_() is not None)
+        return self._config_()
 
     history = property(lambda x: x._history)
     """History (read-only).
@@ -132,7 +141,7 @@ class Dict(collections.abc.MutableMapping):
         if hasattr(getattr(self.__class__, attr, None), '__set__'):
             # This allows properties to work.
             object.__setattr__(self, attr, value)
-        elif attr in self.__dict__ or attr in ["_field", "_config", "_history", "_dict", "__doc__"]:
+        elif attr in self.__dict__ or attr in ["_field", "_config_", "_history", "_dict", "__doc__"]:
             # This allows specific private attributes to work.
             object.__setattr__(self, attr, value)
         else:
