@@ -33,6 +33,8 @@ from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
 from .comparison import compareConfigs, getComparisonName
 from .callStack import getCallStack, getStackFrame
 
+import weakref
+
 
 class ConfigurableInstance:
     """A retargetable configuration in a `ConfigurableField` that proxies
@@ -68,7 +70,7 @@ class ConfigurableInstance:
         object.__setattr__(self, "_value", value)
 
     def __init__(self, config, field, at=None, label="default"):
-        object.__setattr__(self, "_config", config)
+        object.__setattr__(self, "_config_", weakref.ref(config))
         object.__setattr__(self, "_field", field)
         object.__setattr__(self, "__doc__", config)
         object.__setattr__(self, "_target", field.target)
@@ -82,6 +84,13 @@ class ConfigurableInstance:
 
         history = config._history.setdefault(field.name, [])
         history.append(("Targeted and initialized from defaults", at, label))
+
+    @property
+    def _config(self) -> Config:
+        # Config Fields should never outlive their config class instance
+        # assert that as such here
+        assert(self._config_() is not None)
+        return self._config_()
 
     target = property(lambda x: x._target)
     """The targeted configurable (read-only).

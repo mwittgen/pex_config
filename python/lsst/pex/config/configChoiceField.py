@@ -34,6 +34,8 @@ from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
 from .comparison import getComparisonName, compareScalars, compareConfigs
 from .callStack import getCallStack, getStackFrame
 
+import weakref
+
 
 class SelectionSet(collections.abc.MutableSet):
     """A mutable set class that tracks the selection of multi-select
@@ -65,7 +67,7 @@ class SelectionSet(collections.abc.MutableSet):
             at = getCallStack()
         self._dict = dict_
         self._field = self._dict._field
-        self._config = self._dict._config
+        self._config_ = weakref.ref(self._dict._config)
         self.__history = self._config._history.setdefault(self._field.name, [])
         if value is not None:
             try:
@@ -82,6 +84,13 @@ class SelectionSet(collections.abc.MutableSet):
 
         if setHistory:
             self.__history.append(("Set selection to %s" % self, at, label))
+
+    @property
+    def _config(self) -> Config:
+        # Config Fields should never outlive their config class instance
+        # assert that as such here
+        assert(self._config_() is not None)
+        return self._config_()
 
     def add(self, value, at=None):
         """Add a value to the selected set.

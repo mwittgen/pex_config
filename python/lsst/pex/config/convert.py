@@ -33,6 +33,15 @@ except ImportError:
     dafBase = None
 
 
+def _helper(ps, prefix, dict_):
+    for k, v in dict_.items():
+        name = prefix + "." + k if prefix is not None else k
+        if isinstance(v, dict):
+            _helper(ps, name, v)
+        elif v is not None:
+            ps.set(name, v)
+
+
 def makePropertySet(config):
     """Convert a configuration into a `lsst.daf.base.PropertySet`.
 
@@ -54,14 +63,6 @@ def makePropertySet(config):
     """
     if dafBase is None:
         raise RuntimeError("lsst.daf.base is not available")
-
-    def _helper(ps, prefix, dict_):
-        for k, v in dict_.items():
-            name = prefix + "." + k if prefix is not None else k
-            if isinstance(v, dict):
-                _helper(ps, name, v)
-            elif v is not None:
-                ps.set(name, v)
 
     if config is not None:
         ps = dafBase.PropertySet()
