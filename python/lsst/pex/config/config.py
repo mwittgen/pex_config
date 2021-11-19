@@ -560,10 +560,19 @@ class Field:
         value described by the field (and held by the Config instance) is
         returned.
         """
-        if instance is None or not isinstance(instance, Config):
+        if instance is None:
             return self
         else:
-            return instance._storage[self.name]
+            # try statements are almost free in python if they succeed
+            try:
+                return instance._storage[self.name]
+            except AttributeError:
+                if not isinstance(instance, Config):
+                    return self
+                else:
+                    raise AttributeError(f"Config {instance} is missing "
+                                         "_storage attribute, likely"
+                                         " incorrectly initialized")
 
     def __set__(self, instance, value, at=None, label='assignment'):
         """Set an attribute on the config instance.
