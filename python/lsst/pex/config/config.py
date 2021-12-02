@@ -1037,12 +1037,14 @@ class Config(metaclass=ConfigMeta):
         See also
         --------
         lsst.pex.config.Config.loadFromStream
+        lsst.pex.config.Config.loadFromString
         lsst.pex.config.Config.save
-        lsst.pex.config.Config.saveFromStream
+        lsst.pex.config.Config.saveToStream
+        lsst.pex.config.Config.saveToString
         """
         with open(filename, "r") as f:
             code = compile(f.read(), filename=filename, mode="exec")
-            self.loadFromStream(stream=code, root=root, filename=filename)
+            self.loadFromString(code, root=root, filename=filename)
 
     def loadFromStream(self, stream, root="config", filename=None):
         """Modify this Config in place by executing the Python code in the
@@ -1050,7 +1052,57 @@ class Config(metaclass=ConfigMeta):
 
         Parameters
         ----------
-        stream : file-like object, `str`, or compiled string
+        stream : file-like object, `str`, `bytes`, or compiled string
+            Stream containing configuration override code.  If this is a
+            code object, it should be compiled with ``mode="exec"``.
+        root : `str`, optional
+            Name of the variable in file that refers to the config being
+            overridden.
+
+            For example, the value of root is ``"config"`` and the file
+            contains::
+
+                config.myField = 5
+
+            Then this config's field ``myField`` is set to ``5``.
+
+            **Deprecated:** For backwards compatibility, older config files
+            that use ``root="root"`` instead of ``root="config"`` will be
+            loaded with a warning printed to `sys.stderr`. This feature will be
+            removed at some point.
+        filename : `str`, optional
+            Name of the configuration file, or `None` if unknown or contained
+            in the stream. Used for error reporting.
+
+        Notes
+        -----
+        For backwards compatibility reasons, this method accepts strings, bytes
+        and code objects as well as file-like objects.  New code should use
+        `loadFromString` instead for most of these types.
+
+        See also
+        --------
+        lsst.pex.config.Config.load
+        lsst.pex.config.Config.loadFromString
+        lsst.pex.config.Config.save
+        lsst.pex.config.Config.saveToStream
+        lsst.pex.config.Config.saveToString
+        """
+        if hasattr(stream, "read"):
+            if filename is None:
+                filename = getattr(stream, "name", "?")
+            code = compile(stream.read(), filename=filename, mode="exec")
+        else:
+            code = stream
+        self.loadFromString(code, root=root, filename=filename)
+
+    def loadFromString(self, code, root="config", filename=None):
+        """Modify this Config in place by executing the Python code in the
+        provided string.
+
+        Parameters
+        ----------
+        code : `str`, `bytes`, or compiled string
             Stream containing configuration override code.
         root : `str`, optional
             Name of the variable in file that refers to the config being
@@ -1074,27 +1126,26 @@ class Config(metaclass=ConfigMeta):
         See also
         --------
         lsst.pex.config.Config.load
+        lsst.pex.config.Config.loadFromStream
         lsst.pex.config.Config.save
-        lsst.pex.config.Config.saveFromStream
+        lsst.pex.config.Config.saveToStream
+        lsst.pex.config.Config.saveToString
         """
+        if filename is None:
+            # try to determine the file name; a compiled string
+            # has attribute "co_filename",
+            filename = getattr(code, "co_filename", "?")
         with RecordingImporter() as importer:
             globals = {"__file__": filename}
             try:
                 local = {root: self}
-                exec(stream, globals, local)
+                exec(code, globals, local)
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
-                    if filename is None:
-                        # try to determine the file name; a compiled string
-                        # has attribute "co_filename",
-                        # an open file has attribute "name", else give up
-                        filename = getattr(stream, "co_filename", None)
-                        if filename is None:
-                            filename = getattr(stream, "name", "?")
                     print(f"Config override file {filename!r}"
                           " appears to use 'root' instead of 'config'; trying with 'root'", file=sys.stderr)
                     local = {"root": self}
-                    exec(stream, globals, local)
+                    exec(code, globals, local)
                 else:
                     raise
 
@@ -1115,8 +1166,10 @@ class Config(metaclass=ConfigMeta):
         See also
         --------
         lsst.pex.config.Config.saveToStream
+        lsst.pex.config.Config.saveToString
         lsst.pex.config.Config.load
         lsst.pex.config.Config.loadFromStream
+        lsst.pex.config.Config.loadFromString
         """
         d = os.path.dirname(filename)
         with tempfile.NamedTemporaryFile(mode="w", delete=False, dir=d) as outfile:
@@ -1131,6 +1184,34 @@ class Config(metaclass=ConfigMeta):
             # source and dest. are on the same filesystem.
             # os.rename may not work across filesystems
             shutil.move(outfile.name, filename)
+
+    def saveToString(self, skipImports=False):
+        """Return the Python script form of this configuration as an executable
+        string.
+
+        Parameters
+        ----------
+        skipImports : `bool`, optional
+            If `True` then do not include ``import`` statements in output,
+            this is to support human-oriented output from ``pipetask`` where
+            additional clutter is not useful.
+
+        Returns
+        -------
+        code : `str`
+            A code string readable by `loadFromString`.
+
+        See also
+        --------
+        lsst.pex.config.Config.save
+        lsst.pex.config.Config.saveToStream
+        lsst.pex.config.Config.load
+        lsst.pex.config.Config.loadFromStream
+        lsst.pex.config.Config.loadFromString
+        """
+        buffer = io.StringIO()
+        self.saveToStream(buffer, skipImports=skipImports)
+        return buffer.getvalue()
 
     def saveToStream(self, outfile, root="config", skipImports=False):
         """Save a configuration file to a stream, which, when loaded,
@@ -1152,8 +1233,10 @@ class Config(metaclass=ConfigMeta):
         See also
         --------
         lsst.pex.config.Config.save
+        lsst.pex.config.Config.saveToString
         lsst.pex.config.Config.load
         lsst.pex.config.Config.loadFromStream
+        lsst.pex.config.Config.loadFromString
         """
         tmp = self._name
         self._rename(root)

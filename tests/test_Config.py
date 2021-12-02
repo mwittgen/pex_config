@@ -244,33 +244,36 @@ class ConfigTest(unittest.TestCase):
         roundTrip = Complex()
         roundTrip.load("roundtrip.test")
         os.remove("roundtrip.test")
-
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
-
         del roundTrip
+
         # test saving to an open file
-        outfile = open("roundtrip.test", "w")
-        self.comp.saveToStream(outfile)
-        outfile.close()
-
+        with open("roundtrip.test", "w") as outfile:
+            self.comp.saveToStream(outfile)
         roundTrip = Complex()
-        roundTrip.load("roundtrip.test")
+        with open("roundtrip.test", "r") as infile:
+            roundTrip.loadFromStream(infile)
         os.remove("roundtrip.test")
-
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
+        del roundTrip
+
+        # test saving to a string.
+        saved_string = self.comp.saveToString()
+        roundTrip = Complex()
+        roundTrip.loadFromString(saved_string)
+        self.assertEqual(self.comp.c.f, roundTrip.c.f)
+        self.assertEqual(self.comp.r.name, roundTrip.r.name)
+        del roundTrip
 
         # test backwards compatibility feature of allowing "root" instead of
         # "config"
-        outfile = open("roundtrip.test", "w")
-        self.comp.saveToStream(outfile, root="root")
-        outfile.close()
-
+        with open("roundtrip.test", "w") as outfile:
+            self.comp.saveToStream(outfile, root="root")
         roundTrip = Complex()
         roundTrip.load("roundtrip.test")
         os.remove("roundtrip.test")
-
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
 
