@@ -588,7 +588,7 @@ class ConfigChoiceField(Field[ConfigInstanceDict]):
         for v in instanceDict.values():
             v._save(outfile)
         if self.multi:
-            outfile.write("{}.names={!r}\n".format(fullname, instanceDict.names))
+            outfile.write("{}.names={!r}\n".format(fullname, sorted(instanceDict.names)))
         else:
             outfile.write("{}.name={!r}\n".format(fullname, instanceDict.name))
 
