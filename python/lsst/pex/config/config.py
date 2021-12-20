@@ -1353,7 +1353,7 @@ class Config(metaclass=ConfigMeta):  # type: ignore
                     f"assert type({root})=={typeString}, 'config is of type %s.%s instead of "
                     f"{typeString}' % (type({root}).__module__, type({root}).__name__)\n"
                 )
-                for imp in self._imports:
+                for imp in sorted(self._imports):
                     if imp in sys.modules and sys.modules[imp] is not None:
                         outfile.write("import {}\n".format(imp))
             self._save(outfile)
