@@ -54,7 +54,7 @@ Here is a config class that includes five fields:
            default="SAT")
        flatScalingType = pexConfig.ChoiceField(
            doc="The method for scaling the flat on the fly.",
-           dtypye=str,
+           dtype=str,
            default='USER',
            allowed={
                "USER": "User defined scaling",
