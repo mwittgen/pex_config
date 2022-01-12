@@ -27,8 +27,8 @@
 
 __all__ = ["ChoiceField"]
 
-from .config import Field, _typeStr
 from .callStack import getStackFrame
+from .config import Field, _typeStr
 
 
 class ChoiceField(Field):
@@ -68,6 +68,7 @@ class ChoiceField(Field):
     RangeField
     RegistryField
     """
+
     def __init__(self, doc, dtype, allowed, default=None, optional=True, deprecated=None):
         self.allowed = dict(allowed)
         if optional and None not in self.allowed:
@@ -76,21 +77,25 @@ class ChoiceField(Field):
         if len(self.allowed) == 0:
             raise ValueError("ChoiceFields must allow at least one choice")
 
-        Field.__init__(self, doc=doc, dtype=dtype, default=default,
-                       check=None, optional=optional, deprecated=deprecated)
+        Field.__init__(
+            self, doc=doc, dtype=dtype, default=default, check=None, optional=optional, deprecated=deprecated
+        )
 
         self.__doc__ += "\n\nAllowed values:\n\n"
         for choice, choiceDoc in self.allowed.items():
             if choice is not None and not isinstance(choice, dtype):
-                raise ValueError("ChoiceField's allowed choice %s is of incorrect type %s. Expected %s" %
-                                 (choice, _typeStr(choice), _typeStr(dtype)))
-            self.__doc__ += "%s\n  %s\n" % ('``{0!r}``'.format(str(choice)), choiceDoc)
+                raise ValueError(
+                    "ChoiceField's allowed choice %s is of incorrect type %s. Expected %s"
+                    % (choice, _typeStr(choice), _typeStr(dtype))
+                )
+            self.__doc__ += "%s\n  %s\n" % ("``{0!r}``".format(str(choice)), choiceDoc)
 
         self.source = getStackFrame()
 
     def _validateValue(self, value):
         Field._validateValue(self, value)
         if value not in self.allowed:
-            msg = "Value {} is not allowed.\n" \
-                "\tAllowed values: [{}]".format(value, ", ".join(str(key) for key in self.allowed))
+            msg = "Value {} is not allowed.\n\tAllowed values: [{}]".format(
+                value, ", ".join(str(key) for key in self.allowed)
+            )
             raise ValueError(msg)

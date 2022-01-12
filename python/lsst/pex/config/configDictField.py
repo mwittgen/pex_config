@@ -27,10 +27,10 @@
 
 __all__ = ["ConfigDictField"]
 
-from .config import Config, FieldValidationError, _autocast, _typeStr, _joinNamePath
-from .dictField import Dict, DictField
-from .comparison import compareConfigs, compareScalars, getComparisonName
 from .callStack import getCallStack, getStackFrame
+from .comparison import compareConfigs, compareScalars, getComparisonName
+from .config import Config, FieldValidationError, _autocast, _joinNamePath, _typeStr
+from .dictField import Dict, DictField
 
 
 class ConfigDict(Dict):
@@ -46,22 +46,24 @@ class ConfigDict(Dict):
 
     def __setitem__(self, k, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
-            msg = "Cannot modify a frozen Config. "\
-                  "Attempting to set item at key %r to value %s" % (k, x)
+            msg = "Cannot modify a frozen Config. Attempting to set item at key %r to value %s" % (k, x)
             raise FieldValidationError(self._field, self._config, msg)
 
         # validate keytype
         k = _autocast(k, self._field.keytype)
         if type(k) != self._field.keytype:
-            msg = "Key %r is of type %s, expected type %s" % \
-                (k, _typeStr(k), _typeStr(self._field.keytype))
+            msg = "Key %r is of type %s, expected type %s" % (k, _typeStr(k), _typeStr(self._field.keytype))
             raise FieldValidationError(self._field, self._config, msg)
 
         # validate itemtype
         dtype = self._field.itemtype
         if type(x) != self._field.itemtype and x != self._field.itemtype:
-            msg = "Value %s at key %r is of incorrect type %s. Expected type %s" % \
-                (x, k, _typeStr(x), _typeStr(self._field.itemtype))
+            msg = "Value %s at key %r is of incorrect type %s. Expected type %s" % (
+                x,
+                k,
+                _typeStr(x),
+                _typeStr(self._field.itemtype),
+            )
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
@@ -147,17 +149,31 @@ class ConfigDictField(DictField):
 
     DictClass = ConfigDict
 
-    def __init__(self, doc, keytype, itemtype, default=None, optional=False, dictCheck=None, itemCheck=None,
-                 deprecated=None):
+    def __init__(
+        self,
+        doc,
+        keytype,
+        itemtype,
+        default=None,
+        optional=False,
+        dictCheck=None,
+        itemCheck=None,
+        deprecated=None,
+    ):
         source = getStackFrame()
-        self._setup(doc=doc, dtype=ConfigDict, default=default, check=None,
-                    optional=optional, source=source, deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=ConfigDict,
+            default=default,
+            check=None,
+            optional=optional,
+            source=source,
+            deprecated=deprecated,
+        )
         if keytype not in self.supportedTypes:
-            raise ValueError("'keytype' %s is not a supported type" %
-                             _typeStr(keytype))
+            raise ValueError("'keytype' %s is not a supported type" % _typeStr(keytype))
         elif not issubclass(itemtype, Config):
-            raise ValueError("'itemtype' %s is not a supported type" %
-                             _typeStr(itemtype))
+            raise ValueError("'itemtype' %s is not a supported type" % _typeStr(itemtype))
         if dictCheck is not None and not hasattr(dictCheck, "__call__"):
             raise ValueError("'dictCheck' must be callable")
         if itemCheck is not None and not hasattr(itemCheck, "__call__"):
@@ -201,12 +217,12 @@ class ConfigDictField(DictField):
         configDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)
         if configDict is None:
-            outfile.write(u"{}={!r}\n".format(fullname, configDict))
+            outfile.write("{}={!r}\n".format(fullname, configDict))
             return
 
-        outfile.write(u"{}={!r}\n".format(fullname, {}))
+        outfile.write("{}={!r}\n".format(fullname, {}))
         for v in configDict.values():
-            outfile.write(u"{}={}()\n".format(v._name, _typeStr(v)))
+            outfile.write("{}={}()\n".format(v._name, _typeStr(v)))
             v._save(outfile)
 
     def freeze(self, instance):
@@ -248,16 +264,16 @@ class ConfigDictField(DictField):
         d1 = getattr(instance1, self.name)
         d2 = getattr(instance2, self.name)
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         if not compareScalars("keys for %s" % name, set(d1.keys()), set(d2.keys()), output=output):
             return False
         equal = True
         for k, v1 in d1.items():
             v2 = d2[k]
-            result = compareConfigs("%s[%r]" % (name, k), v1, v2, shortcut=shortcut,
-                                    rtol=rtol, atol=atol, output=output)
+            result = compareConfigs(
+                "%s[%r]" % (name, k), v1, v2, shortcut=shortcut, rtol=rtol, atol=atol, output=output
+            )
             if not result and shortcut:
                 return False
             equal = equal and result

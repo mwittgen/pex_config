@@ -31,7 +31,7 @@ import collections.abc
 import copy
 
 from .config import Config, FieldValidationError, _typeStr
-from .configChoiceField import ConfigInstanceDict, ConfigChoiceField
+from .configChoiceField import ConfigChoiceField, ConfigInstanceDict
 
 
 class ConfigurableWrapper:
@@ -115,7 +115,12 @@ class Registry(collections.abc.Mapping):
 
     def __init__(self, configBaseType=Config):
         if not issubclass(configBaseType, Config):
-            raise TypeError("configBaseType=%s must be a subclass of Config" % _typeStr(configBaseType,))
+            raise TypeError(
+                "configBaseType=%s must be a subclass of Config"
+                % _typeStr(
+                    configBaseType,
+                )
+            )
         self._configBaseType = configBaseType
         self._dict = {}
 
@@ -156,8 +161,10 @@ class Registry(collections.abc.Mapping):
         else:
             wrapper = ConfigurableWrapper(target, ConfigClass)
         if not issubclass(wrapper.ConfigClass, self._configBaseType):
-            raise TypeError("ConfigClass=%s is not a subclass of %r" %
-                            (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType)))
+            raise TypeError(
+                "ConfigClass=%s is not a subclass of %r"
+                % (_typeStr(wrapper.ConfigClass), _typeStr(self._configBaseType))
+            )
         self._dict[name] = wrapper
 
     def __getitem__(self, key):
@@ -239,16 +246,18 @@ class RegistryInstanceDict(ConfigInstanceDict):
 
     def _getTarget(self):
         if self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Multi-selection field has no attribute 'target'")
+            raise FieldValidationError(
+                self._field, self._config, "Multi-selection field has no attribute 'target'"
+            )
         return self.types.registry[self._selection]
 
     target = property(_getTarget)
 
     def _getTargets(self):
         if not self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Single-selection field has no attribute 'targets'")
+            raise FieldValidationError(
+                self._field, self._config, "Single-selection field has no attribute 'targets'"
+            )
         return [self.types.registry[c] for c in self._selection]
 
     targets = property(_getTargets)
@@ -262,8 +271,7 @@ class RegistryInstanceDict(ConfigInstanceDict):
         Additional arguments will be passed on to the configurable target(s)
         """
         if self.active is None:
-            msg = "No selection has been made.  Options: %s" % \
-                " ".join(self.types.registry.keys())
+            msg = "No selection has been made.  Options: %s" % " ".join(self.types.registry.keys())
             raise FieldValidationError(self._field, self._config, msg)
         if self._field.multi:
             retvals = []
@@ -326,9 +334,13 @@ class RegistryField(ConfigChoiceField):
         WARNING: this must be overridden by subclasses if they change the
         constructor signature!
         """
-        other = type(self)(doc=self.doc, registry=self.registry,
-                           default=copy.deepcopy(self.default),
-                           optional=self.optional, multi=self.multi)
+        other = type(self)(
+            doc=self.doc,
+            registry=self.registry,
+            default=copy.deepcopy(self.default),
+            optional=self.optional,
+            multi=self.multi,
+        )
         other.source = self.source
         return other
 
@@ -377,9 +389,11 @@ def registerConfigurable(name, registry, ConfigClass=None):
     -----
     Internally, this decorator runs `Registry.register`.
     """
+
     def decorate(cls):
         registry.register(name, target=cls, ConfigClass=ConfigClass)
         return cls
+
     return decorate
 
 
@@ -404,7 +418,9 @@ def registerConfig(name, registry, target):
     -----
     Internally, this decorator runs `Registry.register`.
     """
+
     def decorate(cls):
         registry.register(name, target=target, ConfigClass=cls)
         return cls
+
     return decorate

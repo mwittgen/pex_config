@@ -30,6 +30,7 @@ not previously imported.
 """
 
 import unittest
+
 try:
     import yaml
 except ImportError:
@@ -76,7 +77,6 @@ serialized = """
 
 
 class UnloadedYaml(unittest.TestCase):
-
     @unittest.skipIf(yaml is None, "pyyaml not available")
     def testLoadUnloaded(self):
         loaded = yaml.safe_load(serialized)

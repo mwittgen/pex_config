@@ -25,9 +25,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from _testLib import *
-import lsst.pex.config
 import sys
+
+import lsst.pex.config
+from _testLib import *
+
 module = sys.modules[__name__]
 InnerConfigObject = lsst.pex.config.makeConfigClass(InnerControlObject, module=module)
 OuterConfigObject = lsst.pex.config.makeConfigClass(OuterControlObject, module=module)

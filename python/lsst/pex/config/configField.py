@@ -27,9 +27,9 @@
 
 __all__ = ["ConfigField"]
 
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
-from .comparison import compareConfigs, getComparisonName
 from .callStack import getCallStack, getStackFrame
+from .comparison import compareConfigs, getComparisonName
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 
 
 class ConfigField(Field):
@@ -80,13 +80,19 @@ class ConfigField(Field):
 
     def __init__(self, doc, dtype, default=None, check=None, deprecated=None):
         if not issubclass(dtype, Config):
-            raise ValueError("dtype=%s is not a subclass of Config" %
-                             _typeStr(dtype))
+            raise ValueError("dtype=%s is not a subclass of Config" % _typeStr(dtype))
         if default is None:
             default = dtype
         source = getStackFrame()
-        self._setup(doc=doc, dtype=dtype, default=default, check=check,
-                    optional=False, source=source, deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=dtype,
+            default=default,
+            check=check,
+            optional=False,
+            source=source,
+            deprecated=deprecated,
+        )
 
     def __get__(self, instance, owner=None):
         if instance is None or not isinstance(instance, Config):
@@ -101,13 +107,15 @@ class ConfigField(Field):
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:
-            raise FieldValidationError(self, instance,
-                                       "Cannot modify a frozen Config")
+            raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         name = _joinNamePath(prefix=instance._name, name=self.name)
 
         if value != self.dtype and type(value) != self.dtype:
-            msg = "Value %s is of incorrect type %s. Expected %s" % \
-                (value, _typeStr(value), _typeStr(self.dtype))
+            msg = "Value %s is of incorrect type %s. Expected %s" % (
+                value,
+                _typeStr(value),
+                _typeStr(self.dtype),
+            )
             raise FieldValidationError(self, instance, msg)
 
         if at is None:
@@ -118,8 +126,9 @@ class ConfigField(Field):
             if value == self.dtype:
                 instance._storage[self.name] = self.dtype(__name=name, __at=at, __label=label)
             else:
-                instance._storage[self.name] = self.dtype(__name=name, __at=at,
-                                                          __label=label, **value._storage)
+                instance._storage[self.name] = self.dtype(
+                    __name=name, __at=at, __label=label, **value._storage
+                )
         else:
             if value == self.dtype:
                 value = value()
@@ -289,7 +298,6 @@ class ConfigField(Field):
         c1 = getattr(instance1, self.name)
         c2 = getattr(instance2, self.name)
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)

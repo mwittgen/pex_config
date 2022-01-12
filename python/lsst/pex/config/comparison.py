@@ -59,7 +59,7 @@ def getComparisonName(name1, name2):
     return name1
 
 
-def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
+def compareScalars(name, v1, v2, output, rtol=1e-8, atol=1e-8, dtype=None):
     """Compare two scalar values for equality.
 
     This function is a helper for `lsst.pex.config.Config.compare`.
@@ -98,17 +98,17 @@ def compareScalars(name, v1, v2, output, rtol=1E-8, atol=1E-8, dtype=None):
     Floating point comparisons are performed by `numpy.allclose`.
     """
     if v1 is None or v2 is None:
-        result = (v1 == v2)
+        result = v1 == v2
     elif dtype in (float, complex):
         result = numpy.allclose(v1, v2, rtol=rtol, atol=atol) or (numpy.isnan(v1) and numpy.isnan(v2))
     else:
-        result = (v1 == v2)
+        result = v1 == v2
     if not result and output is not None:
         output("Inequality in %s: %r != %r" % (name, v1, v2))
     return result
 
 
-def compareConfigs(name, c1, c2, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
+def compareConfigs(name, c1, c2, shortcut=True, rtol=1e-8, atol=1e-8, output=None):
     """Compare two `lsst.pex.config.Config` instances for equality.
 
     This function is a helper for `lsst.pex.config.Config.compare`.

@@ -26,6 +26,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConfig
 
 
@@ -47,8 +48,7 @@ def isPositive(x):
 
 class Config1(pexConfig.Config):
     l1 = pexConfig.ListField("l1", int, minLength=2, maxLength=5, default=[1, 2, 3], itemCheck=isPositive)
-    l2 = pexConfig.ListField("l2", int, length=3, default=[1, 2, 3], listCheck=isSorted,
-                             itemCheck=isPositive)
+    l2 = pexConfig.ListField("l2", int, length=3, default=[1, 2, 3], listCheck=isSorted, itemCheck=isPositive)
     l3 = pexConfig.ListField("l3", int, length=3, default=None, optional=True, itemCheck=isPositive)
     l4 = pexConfig.ListField("l4", int, length=3, default=None, itemCheck=isPositive)
 
@@ -61,32 +61,40 @@ class Config2(pexConfig.Config):
 class ListFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
+
             class BadDtype(pexConfig.Config):
                 ll = pexConfig.ListField("...", list)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Unsupported dtype ListFields should not be allowed")
 
         try:
+
             class BadLengths(pexConfig.Config):
                 ll = pexConfig.ListField("...", int, minLength=4, maxLength=2)
+
         except ValueError:
             pass
         else:
             raise SyntaxError("minLnegth <= maxLength should not be allowed")
 
         try:
+
             class BadLength(pexConfig.Config):
                 ll = pexConfig.ListField("...", int, length=-1)
+
         except Exception:
             pass
         else:
             raise SyntaxError("negative length should not be allowed")
 
         try:
+
             class BadLength2(pexConfig.Config):
                 ll = pexConfig.ListField("...", int, maxLength=-1)
+
         except Exception:
             pass
         else:
@@ -141,10 +149,10 @@ class ListFieldTest(unittest.TestCase):
 
     def testCastAndTypes(self):
         c = Config2()
-        self.assertEqual(c.lf, [1., 2., 3.])
+        self.assertEqual(c.lf, [1.0, 2.0, 3.0])
 
         c.lf[2] = 10
-        self.assertEqual(c.lf, [1., 2., 10.])
+        self.assertEqual(c.lf, [1.0, 2.0, 10.0])
 
         c.ls.append("foo")
         self.assertEqual(c.ls, ["hi", "foo"])

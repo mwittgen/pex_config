@@ -27,15 +27,15 @@
 
 __all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError")
 
-import io
+import copy
 import importlib
+import io
+import math
 import os
 import re
-import sys
-import math
-import copy
-import tempfile
 import shutil
+import sys
+import tempfile
 import warnings
 
 # if YAML is not available that's fine and we simply don't register
@@ -47,8 +47,8 @@ except ImportError:
     YamlLoaders = ()
     doImport = None
 
-from .comparison import getComparisonName, compareScalars, compareConfigs
-from .callStack import getStackFrame, getCallStack
+from .callStack import getCallStack, getStackFrame
+from .comparison import compareConfigs, compareScalars, getComparisonName
 
 if yaml:
     YamlLoaders = (yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader)
@@ -56,14 +56,14 @@ if yaml:
     try:
         # CLoader is not always available
         from yaml import CLoader
+
         YamlLoaders += (CLoader,)
     except ImportError:
         pass
 
 
 def _joinNamePath(prefix=None, name=None, index=None):
-    """Generate nested configuration names.
-    """
+    """Generate nested configuration names."""
     if not prefix and not name:
         raise ValueError("Invalid name: cannot be None")
     elif not name:
@@ -112,17 +112,18 @@ def _typeStr(x):
     This function is used primarily for writing config files to be executed
     later upon with the 'load' function.
     """
-    if hasattr(x, '__module__') and hasattr(x, '__name__'):
+    if hasattr(x, "__module__") and hasattr(x, "__name__"):
         xtype = x
     else:
         xtype = type(x)
-    if (sys.version_info.major <= 2 and xtype.__module__ == '__builtin__') or xtype.__module__ == 'builtins':
+    if (sys.version_info.major <= 2 and xtype.__module__ == "__builtin__") or xtype.__module__ == "builtins":
         return xtype.__name__
     else:
         return "%s.%s" % (xtype.__module__, xtype.__name__)
 
 
 if yaml:
+
     def _yaml_config_representer(dumper, data):
         """Represent a Config object in a form suitable for YAML.
 
@@ -236,11 +237,18 @@ class FieldValidationError(ValueError):
         """
 
         self.configSource = config._source
-        error = "%s '%s' failed validation: %s\n"\
-                "For more information see the Field definition at:\n%s"\
-                " and the Config definition at:\n%s" % \
-            (self.fieldType.__name__, self.fullname, msg,
-             self.fieldSource.format(), self.configSource.format())
+        error = (
+            "%s '%s' failed validation: %s\n"
+            "For more information see the Field definition at:\n%s"
+            " and the Config definition at:\n%s"
+            % (
+                self.fieldType.__name__,
+                self.fullname,
+                msg,
+                self.fieldSource.format(),
+                self.configSource.format(),
+            )
+        )
         super().__init__(error)
 
 
@@ -330,12 +338,18 @@ class Field:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
 
         source = getStackFrame()
-        self._setup(doc=doc, dtype=dtype, default=default, check=check, optional=optional, source=source,
-                    deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=dtype,
+            default=default,
+            check=check,
+            optional=optional,
+            source=source,
+            deprecated=deprecated,
+        )
 
     def _setup(self, doc, dtype, default, check, optional, source, deprecated):
-        """Set attributes, usually during initialization.
-        """
+        """Set attributes, usually during initialization."""
         self.dtype = dtype
         """Data type for the field.
         """
@@ -463,8 +477,11 @@ class Field:
             return
 
         if not isinstance(value, self.dtype):
-            msg = "Value %s is of incorrect type %s. Expected type %s" % \
-                (value, _typeStr(value), _typeStr(self.dtype))
+            msg = "Value %s is of incorrect type %s. Expected type %s" % (
+                value,
+                _typeStr(value),
+                _typeStr(self.dtype),
+            )
             raise TypeError(msg)
         if self.check is not None and not self.check(value):
             msg = "Value %s is not a valid value" % str(value)
@@ -516,9 +533,9 @@ class Field:
         doc = "# " + str(self.doc).replace("\n", "\n# ")
         if isinstance(value, float) and not math.isfinite(value):
             # non-finite numbers need special care
-            outfile.write(u"{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
+            outfile.write("{}\n{}=float('{!r}')\n\n".format(doc, fullname, value))
         else:
-            outfile.write(u"{}\n{}={!r}\n\n".format(doc, fullname, value))
+            outfile.write("{}\n{}={!r}\n\n".format(doc, fullname, value))
 
     def toDict(self, instance):
         """Convert the field value so that it can be set as the value of an
@@ -570,11 +587,13 @@ class Field:
                 if not isinstance(instance, Config):
                     return self
                 else:
-                    raise AttributeError(f"Config {instance} is missing "
-                                         "_storage attribute, likely"
-                                         " incorrectly initialized")
+                    raise AttributeError(
+                        f"Config {instance} is missing "
+                        "_storage attribute, likely"
+                        " incorrectly initialized"
+                    )
 
-    def __set__(self, instance, value, at=None, label='assignment'):
+    def __set__(self, instance, value, at=None, label="assignment"):
         """Set an attribute on the config instance.
 
         Parameters
@@ -631,7 +650,7 @@ class Field:
             at = getCallStack()
         history.append((value, at, label))
 
-    def __delete__(self, instance, at=None, label='deletion'):
+    def __delete__(self, instance, at=None, label="deletion"):
         """Delete an attribute from a `lsst.pex.config.Config` instance.
 
         Parameters
@@ -684,8 +703,7 @@ class Field:
         v1 = getattr(instance1, self.name)
         v2 = getattr(instance2, self.name)
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         return compareScalars(name, v1, v2, dtype=self.dtype, rtol=rtol, atol=atol, output=output)
 
@@ -720,13 +738,11 @@ class RecordingImporter:
         return False  # Don't suppress exceptions
 
     def uninstall(self):
-        """Uninstall the importer.
-        """
+        """Uninstall the importer."""
         sys.meta_path = self.origMetaPath
 
     def find_module(self, fullname, path=None):
-        """Called as part of the ``import`` chain of events.
-        """
+        """Called as part of the ``import`` chain of events."""
         self._modules.add(fullname)
         # Return None because we don't do any importing.
         return None
@@ -789,8 +805,7 @@ class Config(metaclass=ConfigMeta):
     """
 
     def __iter__(self):
-        """Iterate over fields.
-        """
+        """Iterate over fields."""
         return self._fields.__iter__()
 
     def keys(self):
@@ -1142,8 +1157,11 @@ class Config(metaclass=ConfigMeta):
                 exec(code, globals, local)
             except NameError as e:
                 if root == "config" and "root" in e.args[0]:
-                    print(f"Config override file {filename!r}"
-                          " appears to use 'root' instead of 'config'; trying with 'root'", file=sys.stderr)
+                    print(
+                        f"Config override file {filename!r}"
+                        " appears to use 'root' instead of 'config'; trying with 'root'",
+                        file=sys.stderr,
+                    )
                     local = {"root": self}
                     exec(code, globals, local)
                 else:
@@ -1248,18 +1266,19 @@ class Config(metaclass=ConfigMeta):
                 configType = type(self)
                 typeString = _typeStr(configType)
                 outfile.write(f"import {configType.__module__}\n")
-                outfile.write(f"assert type({root})=={typeString}, 'config is of type %s.%s instead of "
-                              f"{typeString}' % (type({root}).__module__, type({root}).__name__)\n")
+                outfile.write(
+                    f"assert type({root})=={typeString}, 'config is of type %s.%s instead of "
+                    f"{typeString}' % (type({root}).__module__, type({root}).__name__)\n"
+                )
                 for imp in self._imports:
                     if imp in sys.modules and sys.modules[imp] is not None:
-                        outfile.write(u"import {}\n".format(imp))
+                        outfile.write("import {}\n".format(imp))
             self._save(outfile)
         finally:
             self._rename(tmp)
 
     def freeze(self):
-        """Make this config, and all subconfigs, read-only.
-        """
+        """Make this config, and all subconfigs, read-only."""
         self._frozen = True
         for field in self._fields.values():
             field.freeze(self)
@@ -1411,6 +1430,7 @@ class Config(metaclass=ConfigMeta):
         lsst.pex.config.history.format
         """
         import lsst.pex.config.history as pexHist
+
         return pexHist.format(self, name, **kwargs)
 
     history = property(lambda x: x._history)
@@ -1433,13 +1453,16 @@ class Config(metaclass=ConfigMeta):
         if attr in self._fields:
             if self._fields[attr].deprecated is not None:
                 fullname = _joinNamePath(self._name, self._fields[attr].name)
-                warnings.warn(f"Config field {fullname} is deprecated: {self._fields[attr].deprecated}",
-                              FutureWarning, stacklevel=2)
+                warnings.warn(
+                    f"Config field {fullname} is deprecated: {self._fields[attr].deprecated}",
+                    FutureWarning,
+                    stacklevel=2,
+                )
             if at is None:
                 at = getCallStack()
             # This allows Field descriptors to work.
             self._fields[attr].__set__(self, value, at=at, label=label)
-        elif hasattr(getattr(self.__class__, attr, None), '__set__'):
+        elif hasattr(getattr(self.__class__, attr, None), "__set__"):
             # This allows properties and other non-Field descriptors to work.
             return object.__setattr__(self, attr, value)
         elif attr in self.__dict__ or attr in ("_name", "_history", "_storage", "_frozen", "_imports"):
@@ -1479,10 +1502,10 @@ class Config(metaclass=ConfigMeta):
     def __repr__(self):
         return "%s(%s)" % (
             _typeStr(self),
-            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().items() if v is not None)
+            ", ".join("%s=%r" % (k, v) for k, v in self.toDict().items() if v is not None),
         )
 
-    def compare(self, other, shortcut=True, rtol=1E-8, atol=1E-8, output=None):
+    def compare(self, other, shortcut=True, rtol=1e-8, atol=1e-8, output=None):
         """Compare this configuration to another `~lsst.pex.config.Config` for
         equality.
 
@@ -1523,8 +1546,7 @@ class Config(metaclass=ConfigMeta):
         name1 = self._name if self._name is not None else "config"
         name2 = other._name if other._name is not None else "config"
         name = getComparisonName(name1, name2)
-        return compareConfigs(name, self, other, shortcut=shortcut,
-                              rtol=rtol, atol=atol, output=output)
+        return compareConfigs(name, self, other, shortcut=shortcut, rtol=rtol, atol=atol, output=output)
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -1584,9 +1606,9 @@ def _classFromPython(config_py):
 
     if not matches:
         first_line, second_line, _ = config_py.split("\n", 2)
-        raise ValueError("First two lines did not match expected form. Got:\n"
-                         f" - {first_line}\n"
-                         f" - {second_line}")
+        raise ValueError(
+            "First two lines did not match expected form. Got:\n" f" - {first_line}\n" f" - {second_line}"
+        )
 
     module_name = matches.group(1)
     module = importlib.import_module(module_name)
@@ -1601,7 +1623,7 @@ def _classFromPython(config_py):
     # if module name is a.b.c and full name is a.b.c.d.E then
     # we need to remove a.b.c. and iterate over the remainder
     # The +1 is for the extra dot after a.b.c
-    remainder = full_name[len(module_name)+1:]
+    remainder = full_name[len(module_name) + 1 :]
     components = remainder.split(".")
     pytype = module
     for component in components:

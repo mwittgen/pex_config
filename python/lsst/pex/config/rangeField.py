@@ -27,8 +27,8 @@
 
 __all__ = ["RangeField"]
 
-from .config import Field, _typeStr
 from .callStack import getStackFrame
+from .config import Field, _typeStr
 
 
 class RangeField(Field):
@@ -80,9 +80,18 @@ class RangeField(Field):
     containing `int` and `float` types).
     """
 
-    def __init__(self, doc, dtype, default=None, optional=False,
-                 min=None, max=None, inclusiveMin=True, inclusiveMax=False,
-                 deprecated=None):
+    def __init__(
+        self,
+        doc,
+        dtype,
+        default=None,
+        optional=False,
+        min=None,
+        max=None,
+        inclusiveMin=True,
+        inclusiveMax=False,
+        deprecated=None,
+    ):
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported RangeField dtype %s" % (_typeStr(dtype)))
         source = getStackFrame()
@@ -113,13 +122,21 @@ class RangeField(Field):
             self.minCheck = lambda x, y: True if y is None else x >= y
         else:
             self.minCheck = lambda x, y: True if y is None else x > y
-        self._setup(doc, dtype=dtype, default=default, check=None, optional=optional, source=source,
-                    deprecated=deprecated)
-        self.rangeString = "%s%s,%s%s" % \
-            (("[" if inclusiveMin else "("),
-             ("-inf" if self.min is None else self.min),
-             ("inf" if self.max is None else self.max),
-             ("]" if inclusiveMax else ")"))
+        self._setup(
+            doc,
+            dtype=dtype,
+            default=default,
+            check=None,
+            optional=optional,
+            source=source,
+            deprecated=deprecated,
+        )
+        self.rangeString = "%s%s,%s%s" % (
+            ("[" if inclusiveMin else "("),
+            ("-inf" if self.min is None else self.min),
+            ("inf" if self.max is None else self.max),
+            ("]" if inclusiveMax else ")"),
+        )
         """String representation of the field's allowed range (`str`).
         """
 
@@ -127,7 +144,6 @@ class RangeField(Field):
 
     def _validateValue(self, value):
         Field._validateValue(self, value)
-        if not self.minCheck(value, self.min) or \
-                not self.maxCheck(value, self.max):
+        if not self.minCheck(value, self.min) or not self.maxCheck(value, self.max):
             msg = "%s is outside of valid range %s" % (value, self.rangeString)
             raise ValueError(msg)

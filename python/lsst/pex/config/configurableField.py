@@ -25,15 +25,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('ConfigurableInstance', 'ConfigurableField')
+__all__ = ("ConfigurableInstance", "ConfigurableField")
 
 import copy
-
-from .config import Config, Field, _joinNamePath, _typeStr, FieldValidationError
-from .comparison import compareConfigs, getComparisonName
-from .callStack import getCallStack, getStackFrame
-
 import weakref
+
+from .callStack import getCallStack, getStackFrame
+from .comparison import compareConfigs, getComparisonName
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 
 
 class ConfigurableInstance:
@@ -89,7 +88,7 @@ class ConfigurableInstance:
     def _config(self) -> Config:
         # Config Fields should never outlive their config class instance
         # assert that as such here
-        assert(self._config_() is not None)
+        assert self._config_() is not None
         return self._config_()
 
     target = property(lambda x: x._target)
@@ -117,8 +116,7 @@ class ConfigurableInstance:
         return self.target(*args, config=self.value, **kw)
 
     def retarget(self, target, ConfigClass=None, at=None, label="retarget"):
-        """Target a new configurable and ConfigClass
-        """
+        """Target a new configurable and ConfigClass"""
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
@@ -258,13 +256,16 @@ class ConfigurableField(Field):
             except Exception:
                 raise AttributeError("'target' must define attribute 'ConfigClass'")
         if not issubclass(ConfigClass, Config):
-            raise TypeError("'ConfigClass' is of incorrect type %s."
-                            "'ConfigClass' must be a subclass of Config" % _typeStr(ConfigClass))
-        if not hasattr(target, '__call__'):
+            raise TypeError(
+                "'ConfigClass' is of incorrect type %s."
+                "'ConfigClass' must be a subclass of Config" % _typeStr(ConfigClass)
+            )
+        if not hasattr(target, "__call__"):
             raise ValueError("'target' must be callable")
-        if not hasattr(target, '__module__') or not hasattr(target, '__name__'):
-            raise ValueError("'target' must be statically defined"
-                             "(must have '__module__' and '__name__' attributes)")
+        if not hasattr(target, "__module__") or not hasattr(target, "__name__"):
+            raise ValueError(
+                "'target' must be statically defined (must have '__module__' and '__name__' attributes)"
+            )
         return ConfigClass
 
     def __init__(self, doc, target, ConfigClass=None, default=None, check=None, deprecated=None):
@@ -273,12 +274,20 @@ class ConfigurableField(Field):
         if default is None:
             default = ConfigClass
         if default != ConfigClass and type(default) != ConfigClass:
-            raise TypeError("'default' is of incorrect type %s. Expected %s" %
-                            (_typeStr(default), _typeStr(ConfigClass)))
+            raise TypeError(
+                "'default' is of incorrect type %s. Expected %s" % (_typeStr(default), _typeStr(ConfigClass))
+            )
 
         source = getStackFrame()
-        self._setup(doc=doc, dtype=ConfigurableInstance, default=default,
-                    check=check, optional=False, source=source, deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=ConfigurableInstance,
+            default=default,
+            check=check,
+            optional=False,
+            source=source,
+            deprecated=deprecated,
+        )
         self.target = target
         self.ConfigClass = ConfigClass
 
@@ -313,8 +322,11 @@ class ConfigurableField(Field):
             value = oldValue.ConfigClass()
             oldValue.update(__at=at, __label=label, **value._storage)
         else:
-            msg = "Value %s is of incorrect type %s. Expected %s" % \
-                (value, _typeStr(value), _typeStr(oldValue.ConfigClass))
+            msg = "Value %s is of incorrect type %s. Expected %s" % (
+                value,
+                _typeStr(value),
+                _typeStr(oldValue.ConfigClass),
+            )
             raise FieldValidationError(self, instance, msg)
 
     def rename(self, instance):
@@ -338,9 +350,11 @@ class ConfigurableField(Field):
             # not targeting the field-default target.
             # save target information
             ConfigClass = value.ConfigClass
-            outfile.write(u"{}.retarget(target={}, ConfigClass={})\n\n".format(fullname,
-                                                                               _typeStr(target),
-                                                                               _typeStr(ConfigClass)))
+            outfile.write(
+                "{}.retarget(target={}, ConfigClass={})\n\n".format(
+                    fullname, _typeStr(target), _typeStr(ConfigClass)
+                )
+            )
         # save field values
         value._save(outfile)
 
@@ -367,8 +381,12 @@ class ConfigurableField(Field):
         WARNING: this must be overridden by subclasses if they change the
         constructor signature!
         """
-        return type(self)(doc=self.doc, target=self.target, ConfigClass=self.ConfigClass,
-                          default=copy.deepcopy(self.default))
+        return type(self)(
+            doc=self.doc,
+            target=self.target,
+            ConfigClass=self.ConfigClass,
+            default=copy.deepcopy(self.default),
+        )
 
     def _compare(self, instance1, instance2, shortcut, rtol, atol, output):
         """Compare two fields for equality.
@@ -403,7 +421,6 @@ class ConfigurableField(Field):
         c1 = getattr(instance1, self.name)._value
         c2 = getattr(instance2, self.name)._value
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         return compareConfigs(name, c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output)

@@ -27,14 +27,13 @@
 
 __all__ = ["ConfigChoiceField"]
 
-import copy
 import collections.abc
-
-from .config import Config, Field, FieldValidationError, _typeStr, _joinNamePath
-from .comparison import getComparisonName, compareScalars, compareConfigs
-from .callStack import getCallStack, getStackFrame
-
+import copy
 import weakref
+
+from .callStack import getCallStack, getStackFrame
+from .comparison import compareConfigs, compareScalars, getComparisonName
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
 
 
 class SelectionSet(collections.abc.MutableSet):
@@ -89,15 +88,13 @@ class SelectionSet(collections.abc.MutableSet):
     def _config(self) -> Config:
         # Config Fields should never outlive their config class instance
         # assert that as such here
-        assert(self._config_() is not None)
+        assert self._config_() is not None
         return self._config_()
 
     def add(self, value, at=None):
-        """Add a value to the selected set.
-        """
+        """Add a value to the selected set."""
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config,
-                                       "Cannot modify a frozen Config")
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
         if at is None:
             at = getCallStack()
@@ -110,11 +107,9 @@ class SelectionSet(collections.abc.MutableSet):
         self._set.add(value)
 
     def discard(self, value, at=None):
-        """Discard a value from the selected set.
-        """
+        """Discard a value from the selected set."""
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config,
-                                       "Cannot modify a frozen Config")
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
         if value not in self._dict:
             return
@@ -154,6 +149,7 @@ class ConfigInstanceDict(collections.abc.Mapping):
         attribute must provide key-based access to configuration classes,
         (that is, ``typemap[name]``).
     """
+
     def __init__(self, config, field):
         collections.abc.Mapping.__init__(self)
         self._dict = dict()
@@ -196,38 +192,44 @@ class ConfigInstanceDict(collections.abc.Mapping):
 
     def _getNames(self):
         if not self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Single-selection field has no attribute 'names'")
+            raise FieldValidationError(
+                self._field, self._config, "Single-selection field has no attribute 'names'"
+            )
         return self._selection
 
     def _setNames(self, value):
         if not self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Single-selection field has no attribute 'names'")
+            raise FieldValidationError(
+                self._field, self._config, "Single-selection field has no attribute 'names'"
+            )
         self._setSelection(value)
 
     def _delNames(self):
         if not self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Single-selection field has no attribute 'names'")
+            raise FieldValidationError(
+                self._field, self._config, "Single-selection field has no attribute 'names'"
+            )
         self._selection = None
 
     def _getName(self):
         if self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Multi-selection field has no attribute 'name'")
+            raise FieldValidationError(
+                self._field, self._config, "Multi-selection field has no attribute 'name'"
+            )
         return self._selection
 
     def _setName(self, value):
         if self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Multi-selection field has no attribute 'name'")
+            raise FieldValidationError(
+                self._field, self._config, "Multi-selection field has no attribute 'name'"
+            )
         self._setSelection(value)
 
     def _delName(self):
         if self._field.multi:
-            raise FieldValidationError(self._field, self._config,
-                                       "Multi-selection field has no attribute 'name'")
+            raise FieldValidationError(
+                self._field, self._config, "Multi-selection field has no attribute 'name'"
+            )
         self._selection = None
 
     names = property(_getNames, _setNames, _delNames)
@@ -265,8 +267,9 @@ class ConfigInstanceDict(collections.abc.Mapping):
             try:
                 dtype = self.types[k]
             except Exception:
-                raise FieldValidationError(self._field, self._config,
-                                           "Unknown key %r in Registry/ConfigChoiceField" % k)
+                raise FieldValidationError(
+                    self._field, self._config, "Unknown key %r in Registry/ConfigChoiceField" % k
+                )
             name = _joinNamePath(self._config._name, self._field.name, k)
             if at is None:
                 at = getCallStack()
@@ -284,8 +287,12 @@ class ConfigInstanceDict(collections.abc.Mapping):
             raise FieldValidationError(self._field, self._config, "Unknown key %r" % k)
 
         if value != dtype and type(value) != dtype:
-            msg = "Value %s at key %s is of incorrect type %s. Expected type %s" % \
-                (value, k, _typeStr(value), _typeStr(dtype))
+            msg = "Value %s at key %s is of incorrect type %s. Expected type %s" % (
+                value,
+                k,
+                _typeStr(value),
+                _typeStr(dtype),
+            )
             raise FieldValidationError(self._field, self._config, msg)
 
         if at is None:
@@ -307,11 +314,18 @@ class ConfigInstanceDict(collections.abc.Mapping):
             v._rename(_joinNamePath(name=fullname, index=k))
 
     def __setattr__(self, attr, value, at=None, label="assignment"):
-        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+        if hasattr(getattr(self.__class__, attr, None), "__set__"):
             # This allows properties to work.
             object.__setattr__(self, attr, value)
-        elif attr in self.__dict__ or attr in ["_history", "_field", "_config", "_dict",
-                                               "_selection", "__doc__", "_typemap"]:
+        elif attr in self.__dict__ or attr in [
+            "_history",
+            "_field",
+            "_config",
+            "_dict",
+            "_selection",
+            "__doc__",
+            "_typemap",
+        ]:
             # This allows specific private attributes to work.
             object.__setattr__(self, attr, value)
         else:
@@ -439,8 +453,15 @@ class ConfigChoiceField(Field):
 
     def __init__(self, doc, typemap, default=None, optional=False, multi=False, deprecated=None):
         source = getStackFrame()
-        self._setup(doc=doc, dtype=self.instanceDictClass, default=default, check=None, optional=optional,
-                    source=source, deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=self.instanceDictClass,
+            default=default,
+            check=None,
+            optional=optional,
+            source=source,
+            deprecated=deprecated,
+        )
         self.typemap = typemap
         self.multi = multi
 
@@ -527,9 +548,9 @@ class ConfigChoiceField(Field):
         for v in instanceDict.values():
             v._save(outfile)
         if self.multi:
-            outfile.write(u"{}.names={!r}\n".format(fullname, instanceDict.names))
+            outfile.write("{}.names={!r}\n".format(fullname, instanceDict.names))
         else:
-            outfile.write(u"{}.name={!r}\n".format(fullname, instanceDict.name))
+            outfile.write("{}.name={!r}\n".format(fullname, instanceDict.name))
 
     def __deepcopy__(self, memo):
         """Customize deep-copying, because we always want a reference to the
@@ -538,8 +559,13 @@ class ConfigChoiceField(Field):
         WARNING: this must be overridden by subclasses if they change the
         constructor signature!
         """
-        other = type(self)(doc=self.doc, typemap=self.typemap, default=copy.deepcopy(self.default),
-                           optional=self.optional, multi=self.multi)
+        other = type(self)(
+            doc=self.doc,
+            typemap=self.typemap,
+            default=copy.deepcopy(self.default),
+            optional=self.optional,
+            multi=self.multi,
+        )
         other.source = self.source
         return other
 
@@ -579,8 +605,7 @@ class ConfigChoiceField(Field):
         d1 = getattr(instance1, self.name)
         d2 = getattr(instance2, self.name)
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         if not compareScalars("selection for %s" % name, d1._selection, d2._selection, output=output):
             return False
@@ -592,8 +617,9 @@ class ConfigChoiceField(Field):
             nested = [(d1._selection, d1[d1._selection], d2[d1._selection])]
         equal = True
         for k, c1, c2 in nested:
-            result = compareConfigs("%s[%r]" % (name, k), c1, c2, shortcut=shortcut,
-                                    rtol=rtol, atol=atol, output=output)
+            result = compareConfigs(
+                "%s[%r]" % (name, k), c1, c2, shortcut=shortcut, rtol=rtol, atol=atol, output=output
+            )
             if not result and shortcut:
                 return False
             equal = equal and result

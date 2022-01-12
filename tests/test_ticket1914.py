@@ -27,6 +27,7 @@
 
 import os.path
 import unittest
+
 import lsst.pex.config as pexConf
 
 

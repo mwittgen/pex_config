@@ -34,10 +34,13 @@ from ticket2818helper.define import BaseConfig
 class ImportTest(unittest.TestCase):
     def test(self):
         from ticket2818helper.another import AnotherConfigurable  # noqa F401 imported but unused
+
         config = BaseConfig()
-        config.loadFromStream("""from ticket2818helper.another import AnotherConfigurable
+        config.loadFromStream(
+            """from ticket2818helper.another import AnotherConfigurable
 config.test.retarget(AnotherConfigurable)
-""")
+"""
+        )
         stream = io.StringIO()
         config.saveToStream(stream)
         values = stream.getvalue()

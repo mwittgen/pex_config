@@ -25,7 +25,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ('Color', 'format')
+__all__ = ("Color", "format")
 
 import os
 import re
@@ -202,18 +202,42 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     for value, stack, label in config.history.get(name, []):
         output = []
         for frame in stack:
-            if frame.function in ("__new__", "__set__", "__setattr__", "execfile", "wrapper") or \
-                    os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py"):
+            if (
+                frame.function
+                in (
+                    "__new__",
+                    "__set__",
+                    "__setattr__",
+                    "execfile",
+                    "wrapper",
+                )
+                or os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py")
+            ):
                 if not verbose:
                     continue
 
             line = []
             if writeSourceLine:
-                line.append(["%s" % ("%s:%d" % (frame.filename, frame.lineno)), "FILE", ])
+                line.append(
+                    [
+                        "%s" % ("%s:%d" % (frame.filename, frame.lineno)),
+                        "FILE",
+                    ]
+                )
 
-            line.append([frame.content, "TEXT", ])
+            line.append(
+                [
+                    frame.content,
+                    "TEXT",
+                ]
+            )
             if False:
-                line.append([frame.function, "FUNCTION_NAME", ])
+                line.append(
+                    [
+                        frame.function,
+                        "FUNCTION_NAME",
+                    ]
+                )
 
             output.append(line)
 

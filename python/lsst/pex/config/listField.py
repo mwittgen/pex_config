@@ -28,12 +28,11 @@
 __all__ = ["ListField"]
 
 import collections.abc
-
-from .config import Field, FieldValidationError, _typeStr, _autocast, _joinNamePath, Config
-from .comparison import compareScalars, getComparisonName
-from .callStack import getCallStack, getStackFrame
-
 import weakref
+
+from .callStack import getCallStack, getStackFrame
+from .comparison import compareScalars, getComparisonName
+from .config import Config, Field, FieldValidationError, _autocast, _joinNamePath, _typeStr
 
 
 class List(collections.abc.MutableSequence):
@@ -83,7 +82,7 @@ class List(collections.abc.MutableSequence):
     def _config(self) -> Config:
         # Config Fields should never outlive their config class instance
         # assert that as such here
-        assert(self._config_() is not None)
+        assert self._config_() is not None
         return self._config_()
 
     def validateItem(self, i, x):
@@ -105,8 +104,12 @@ class List(collections.abc.MutableSequence):
         """
 
         if not isinstance(x, self._field.itemtype) and x is not None:
-            msg = "Item at position %d with value %s is of incorrect type %s. Expected %s" % \
-                (i, x, _typeStr(x), _typeStr(self._field.itemtype))
+            msg = "Item at position %d with value %s is of incorrect type %s. Expected %s" % (
+                i,
+                x,
+                _typeStr(x),
+                _typeStr(self._field.itemtype),
+            )
             raise FieldValidationError(self._field, self._config, msg)
 
         if self._field.itemCheck is not None and not self._field.itemCheck(x):
@@ -114,8 +117,7 @@ class List(collections.abc.MutableSequence):
             raise FieldValidationError(self._field, self._config, msg)
 
     def list(self):
-        """Sequence of items contained by the `List` (`list`).
-        """
+        """Sequence of items contained by the `List` (`list`)."""
         return self._list
 
     history = property(lambda x: x._history)
@@ -130,8 +132,7 @@ class List(collections.abc.MutableSequence):
 
     def __setitem__(self, i, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config,
-                                       "Cannot modify a frozen Config")
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
         if isinstance(i, slice):
             k, stop, step = i.indices(len(self))
             for j, xj in enumerate(x):
@@ -154,8 +155,7 @@ class List(collections.abc.MutableSequence):
 
     def __delitem__(self, i, at=None, label="delitem", setHistory=True):
         if self._config._frozen:
-            raise FieldValidationError(self._field, self._config,
-                                       "Cannot modify a frozen Config")
+            raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
         del self._list[i]
         if setHistory:
             if at is None:
@@ -210,7 +210,7 @@ class List(collections.abc.MutableSequence):
         return not self.__eq__(other)
 
     def __setattr__(self, attr, value, at=None, label="assignment"):
-        if hasattr(getattr(self.__class__, attr, None), '__set__'):
+        if hasattr(getattr(self.__class__, attr, None), "__set__"):
             # This allows properties to work.
             object.__setattr__(self, attr, value)
         elif attr in self.__dict__ or attr in ["_field", "_config_", "_history", "_list", "__doc__"]:
@@ -266,10 +266,20 @@ class ListField(Field):
     RangeField
     RegistryField
     """
-    def __init__(self, doc, dtype, default=None, optional=False,
-                 listCheck=None, itemCheck=None,
-                 length=None, minLength=None, maxLength=None,
-                 deprecated=None):
+
+    def __init__(
+        self,
+        doc,
+        dtype,
+        default=None,
+        optional=False,
+        listCheck=None,
+        itemCheck=None,
+        length=None,
+        minLength=None,
+        maxLength=None,
+        deprecated=None,
+    ):
         if dtype not in Field.supportedTypes:
             raise ValueError("Unsupported dtype %s" % _typeStr(dtype))
         if length is not None:
@@ -280,10 +290,11 @@ class ListField(Field):
         else:
             if maxLength is not None and maxLength <= 0:
                 raise ValueError("'maxLength' (%d) must be positive" % maxLength)
-            if minLength is not None and maxLength is not None \
-                    and minLength > maxLength:
-                raise ValueError("'maxLength' (%d) must be at least"
-                                 " as large as 'minLength' (%d)" % (maxLength, minLength))
+            if minLength is not None and maxLength is not None and minLength > maxLength:
+                raise ValueError(
+                    "'maxLength' (%d) must be at least"
+                    " as large as 'minLength' (%d)" % (maxLength, minLength)
+                )
 
         if listCheck is not None and not hasattr(listCheck, "__call__"):
             raise ValueError("'listCheck' must be callable")
@@ -291,8 +302,15 @@ class ListField(Field):
             raise ValueError("'itemCheck' must be callable")
 
         source = getStackFrame()
-        self._setup(doc=doc, dtype=List, default=default, check=None, optional=optional, source=source,
-                    deprecated=deprecated)
+        self._setup(
+            doc=doc,
+            dtype=List,
+            default=default,
+            check=None,
+            optional=optional,
+            source=source,
+            deprecated=deprecated,
+        )
 
         self.listCheck = listCheck
         """Callable used to check the list as a whole.
@@ -431,8 +449,7 @@ class ListField(Field):
         l1 = getattr(instance1, self.name)
         l2 = getattr(instance2, self.name)
         name = getComparisonName(
-            _joinNamePath(instance1._name, self.name),
-            _joinNamePath(instance2._name, self.name)
+            _joinNamePath(instance1._name, self.name), _joinNamePath(instance2._name, self.name)
         )
         if not compareScalars("isnone for %s" % name, l1 is None, l2 is None, output=output):
             return False
@@ -442,8 +459,9 @@ class ListField(Field):
             return False
         equal = True
         for n, v1, v2 in zip(range(len(l1)), l1, l2):
-            result = compareScalars("%s[%d]" % (name, n), v1, v2, dtype=self.dtype,
-                                    rtol=rtol, atol=atol, output=output)
+            result = compareScalars(
+                "%s[%d]" % (name, n), v1, v2, dtype=self.dtype, rtol=rtol, atol=atol, output=output
+            )
             if not result and shortcut:
                 return False
             equal = equal and result
