@@ -41,10 +41,3 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml
-
-      - name: Install documenteer
-        run: pip install 'documenteer[pipelines]<0.6'
-
-      - name: Build documentation
-        working-directory: ./doc
-        run: package-docs build
