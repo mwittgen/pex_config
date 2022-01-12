@@ -26,6 +26,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConf
 
 
@@ -39,7 +40,6 @@ class Config2(Config1):
 
 
 class Config3(Config1):
-
     def __init__(self, **kw):
         self.f = 6
 

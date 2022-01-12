@@ -26,6 +26,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConfig
 
 
@@ -39,32 +40,40 @@ class Config1(pexConfig.Config):
 class DictFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
+
             class BadKeytype(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=list, itemtype=int)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Unsupported keyptype DictFields should not be allowed")
 
         try:
+
             class BadItemtype(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=dict)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Unsupported itemtype DictFields should not be allowed")
 
         try:
+
             class BadItemCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=int, itemCheck=4)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Non-callable itemCheck DictFields should not be allowed")
 
         try:
+
             class BadDictCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=int, dictCheck=4)
+
         except Exception:
             pass
         else:
@@ -79,12 +88,12 @@ class DictFieldTest(unittest.TestCase):
         c.d1 = {"a": 1, "b": 2}
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d3", {"hi": True})
         c.d3 = {4: 5}
-        self.assertEqual(c.d3, {4.: 5.})
+        self.assertEqual(c.d3, {4.0: 5.0})
         d = {"a": None, "b": 4, "c": "foo"}
         c.d4 = d
         self.assertEqual(c.d4, d)
         c.d4["a"] = 12
-        c.d4[u"b"] = "three"
+        c.d4["b"] = "three"
         c.d4["c"] = None
         self.assertEqual(c.d4["a"], 12)
         self.assertEqual(c.d4["b"], "three")
@@ -107,7 +116,7 @@ class DictFieldTest(unittest.TestCase):
 
         c.d3 = {}
         c.d3[4] = 5
-        self.assertEqual(c.d3, {4.: 5.})
+        self.assertEqual(c.d3, {4.0: 5.0})
 
     def testNoArbitraryAttributes(self):
         c = Config1()
@@ -119,8 +128,8 @@ class DictFieldTest(unittest.TestCase):
         We create two dicts, with the keys explicitly added in a different
         order and test their equality.
         """
-        keys1 = ['A', 'B', 'C']
-        keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']
+        keys1 = ["A", "B", "C"]
+        keys2 = ["X", "Y", "Z", "a", "b", "c", "d", "e"]
 
         c1 = Config1()
         c1.d4 = {k: "" for k in keys1}
@@ -131,7 +140,7 @@ class DictFieldTest(unittest.TestCase):
         for k in keys2 + keys1:
             c2.d4[k] = ""
 
-        self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
+        self.assertTrue(pexConfig.compareConfigs("test", c1, c2))
 
 
 if __name__ == "__main__":

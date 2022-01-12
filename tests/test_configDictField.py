@@ -27,6 +27,7 @@
 
 import os
 import unittest
+
 import lsst.pex.config as pexConfig
 
 
@@ -39,38 +40,46 @@ class Config2(pexConfig.Config):
 
 
 class Config3(pexConfig.Config):
-    field1 = pexConfig.ConfigDictField(keytype=str, itemtype=pexConfig.Config, default={}, doc='doc')
+    field1 = pexConfig.ConfigDictField(keytype=str, itemtype=pexConfig.Config, default={}, doc="doc")
 
 
 class ConfigDictFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
+
             class BadKeytype(pexConfig.Config):
                 d = pexConfig.ConfigDictField("...", keytype=list, itemtype=Config1)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Unsupported keytypes should not be allowed")
 
         try:
+
             class BadItemtype(pexConfig.Config):
                 d = pexConfig.ConfigDictField("...", keytype=int, itemtype=dict)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Unsupported itemtypes should not be allowed")
 
         try:
+
             class BadItemCheck(pexConfig.Config):
                 d = pexConfig.ConfigDictField("...", keytype=str, itemtype=Config1, itemCheck=4)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Non-callable itemCheck should not be allowed")
 
         try:
+
             class BadDictCheck(pexConfig.Config):
                 d = pexConfig.DictField("...", keytype=int, itemtype=Config1, dictCheck=4)
+
         except Exception:
             pass
         else:
@@ -82,7 +91,7 @@ class ConfigDictFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", {"a": 0})
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", [1.2, 3, 4])
         c.d1 = None
-        c.d1 = {"a": Config1, u"b": Config1()}
+        c.d1 = {"a": Config1, "b": Config1()}
 
     def testValidate(self):
         c = Config2()
@@ -139,8 +148,8 @@ class ConfigDictFieldTest(unittest.TestCase):
         We create two configs, with the keys explicitly added in a different
         order and test their equality.
         """
-        keys1 = ['A', 'B', 'C']
-        keys2 = ['X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e']
+        keys1 = ["A", "B", "C"]
+        keys2 = ["X", "Y", "Z", "a", "b", "c", "d", "e"]
 
         c1 = Config3()
         c1.field1 = {k: pexConfig.Config() for k in keys1}
@@ -151,7 +160,7 @@ class ConfigDictFieldTest(unittest.TestCase):
         for k in keys2 + keys1:
             c2.field1[k] = pexConfig.Config()
 
-        self.assertTrue(pexConfig.compareConfigs('test', c1, c2))
+        self.assertTrue(pexConfig.compareConfigs("test", c1, c2))
 
 
 if __name__ == "__main__":

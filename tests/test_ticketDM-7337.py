@@ -26,11 +26,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config
 
 
 class TicketDM7337Test(unittest.TestCase):
-
     def testStrChoice(self):
         """Test that ChoiceField converts "str" types to be compatible
         with string literals.
@@ -39,11 +39,12 @@ class TicketDM7337Test(unittest.TestCase):
             doc="A description",
             dtype=str,
             allowed={
-                'measure': 'Measure clipped mean and variance from the whole image',
-                'meta': 'Mean = 0, variance = the "BGMEAN" metadata entry',
-                'variance': "Mean = 0, variance = the image's variance",
+                "measure": "Measure clipped mean and variance from the whole image",
+                "meta": 'Mean = 0, variance = the "BGMEAN" metadata entry',
+                "variance": "Mean = 0, variance = the image's variance",
             },
-            default='measure', optional=False
+            default="measure",
+            optional=False,
         )
         self.assertIsInstance(choices, lsst.pex.config.ChoiceField)
 

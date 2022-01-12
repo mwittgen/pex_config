@@ -26,11 +26,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConf
 
 
 class SubConfigDefaultsTest(unittest.TestCase):
-
     def setUp(self):
         class Configurable:
             class ConfigClass(pexConf.Config):
@@ -38,6 +38,7 @@ class SubConfigDefaultsTest(unittest.TestCase):
 
             def __init__(self, cfg):
                 self.value = cfg.v
+
         self.registry = pexConf.makeRegistry("registry for Configurable", Configurable.ConfigClass)
         self.registry.register("C1", Configurable)
         self.registry.register("C2", Configurable)
@@ -50,11 +51,13 @@ class SubConfigDefaultsTest(unittest.TestCase):
             def setDefaults(self):
                 self.r1.name = "C1"
                 self.r2.names = ["C2"]
+
         typemap = {"B": Config1}
 
         class Config2(pexConf.Config):
             c = pexConf.ConfigField(dtype=Config1, doc="holder for Config1")
             b = pexConf.ConfigChoiceField(typemap=typemap, doc="choice holder for Config1")
+
         c1 = Config1()
         self.assertEqual(c1.r1.name, "C1")
         self.assertEqual(list(c1.r2.names), ["C2"])

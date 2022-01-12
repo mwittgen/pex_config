@@ -26,6 +26,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConfig
 
 
@@ -34,6 +35,7 @@ class ConfigTest(unittest.TestCase):
         """Note: the classes are defined here in order to test the register
         decorator.
         """
+
         class ParentConfig(pexConfig.Config):
             pass
 
@@ -41,18 +43,22 @@ class ConfigTest(unittest.TestCase):
 
         class FooConfig1(ParentConfig):
             pass
+
         self.fooConfig1Class = FooConfig1
 
         class FooConfig2(ParentConfig):
             pass
+
         self.fooConfig2Class = FooConfig2
 
         class Config1(pexConfig.Config):
             pass
+
         self.config1Class = Config1
 
         class Config2(pexConfig.Config):
             pass
+
         self.config2Class = Config2
 
         @pexConfig.registerConfigurable("foo1", self.registry)
@@ -64,6 +70,7 @@ class ConfigTest(unittest.TestCase):
 
             def foo(self):
                 pass
+
         self.fooAlg1Class = FooAlg1
 
         class FooAlg2:
@@ -74,6 +81,7 @@ class ConfigTest(unittest.TestCase):
 
             def foo(self):
                 pass
+
         self.registry.register("foo2", FooAlg2, FooConfig2)
         self.fooAlg2Class = FooAlg2
 
@@ -100,19 +108,20 @@ class ConfigTest(unittest.TestCase):
         self.assertIsInstance(foo21, self.fooAlg2Class)
 
     def testReplace(self):
-        """Test replacement in registry (should always fail)
-        """
+        """Test replacement in registry (should always fail)"""
         self.assertRaises(Exception, self.registry.register, "foo1", self.fooAlg2Class)
         self.assertEqual(self.registry["foo1"], self.fooAlg1Class)
 
     def testNesting(self):
         """Make sure nesting a config with a RegistryField doesn't deep-copy
         the registry."""
+
         class MidConfig(pexConfig.Config):
             field = self.registry.makeField("docs for registry field")
 
         class TopConfig(pexConfig.Config):
             middle = pexConfig.ConfigField(dtype=MidConfig, doc="docs for middle")
+
         self.assertIs(MidConfig.field.registry, self.registry)
         middle = MidConfig()
         top = TopConfig()
@@ -133,10 +142,12 @@ class ConfigTest(unittest.TestCase):
     def testExceptions(self):
         class C1(pexConfig.Config):
             r = self.registry.makeField("registry field", multi=True, default=[])
+
         c = C1()
 
         def fail(name):  # lambda doesn't like |=
             c.r.names |= [name]
+
         self.assertRaises(pexConfig.FieldValidationError, fail, "bar")
 
 

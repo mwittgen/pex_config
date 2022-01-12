@@ -27,9 +27,9 @@
 
 import io
 import itertools
-import re
 import os
 import pickle
+import re
 import unittest
 
 try:
@@ -53,14 +53,16 @@ class Simple(pexConfig.Config):
     i = pexConfig.Field("integer test", int, optional=True)
     f = pexConfig.Field("float test", float, default=3.0)
     b = pexConfig.Field("boolean test", bool, default=False, optional=False)
-    c = pexConfig.ChoiceField("choice test", str, default="Hello",
-                              allowed={"Hello": "First choice", "World": "second choice"})
-    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False,
-                             min=3.0, inclusiveMin=True)
-    ll = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
-                             itemCheck=lambda x: x is not None and x > 0)
-    d = pexConfig.DictField("dict test", str, str, default={"key": "value"},
-                            itemCheck=lambda x: x.startswith('v'))
+    c = pexConfig.ChoiceField(
+        "choice test", str, default="Hello", allowed={"Hello": "First choice", "World": "second choice"}
+    )
+    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False, min=3.0, inclusiveMin=True)
+    ll = pexConfig.ListField(
+        "list test", int, default=[1, 2, 3], maxLength=5, itemCheck=lambda x: x is not None and x > 0
+    )
+    d = pexConfig.DictField(
+        "dict test", str, str, default={"key": "value"}, itemCheck=lambda x: x.startswith("v")
+    )
     n = pexConfig.Field("nan test", float, default=float("NAN"))
 
 
@@ -89,10 +91,10 @@ class OuterConfig(InnerConfig, pexConfig.Config):
 
 class Complex(pexConfig.Config):
     c = pexConfig.ConfigField("an inner config", InnerConfig)
-    r = pexConfig.ConfigChoiceField("a registry field", typemap=GLOBAL_REGISTRY,
-                                    default="AAA", optional=False)
-    p = pexConfig.ConfigChoiceField("another registry", typemap=GLOBAL_REGISTRY,
-                                    default="BBB", optional=True)
+    r = pexConfig.ConfigChoiceField(
+        "a registry field", typemap=GLOBAL_REGISTRY, default="AAA", optional=False
+    )
+    p = pexConfig.ConfigChoiceField("another registry", typemap=GLOBAL_REGISTRY, default="BBB", optional=True)
 
 
 class Deprecation(pexConfig.Config):
@@ -123,7 +125,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.inner.f, 0.0)
         self.assertEqual(self.deprecation.old, 10)
 
-        self.assertEqual(self.deprecation._fields['old'].doc, "Something. Deprecated: not used!")
+        self.assertEqual(self.deprecation._fields["old"].doc, "Something. Deprecated: not used!")
 
         self.assertEqual(self.outer.i.f, 5.0)
         self.assertEqual(self.outer.f, 0.0)
@@ -134,17 +136,15 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r["BBB"].f, 0.0)
 
     def testDeprecationWarning(self):
-        """Test that a deprecated field emits a warning when it is set.
-        """
+        """Test that a deprecated field emits a warning when it is set."""
         with self.assertWarns(FutureWarning) as w:
             self.deprecation.old = 5
             self.assertEqual(self.deprecation.old, 5)
 
-            self.assertIn(self.deprecation._fields['old'].deprecated, str(w.warnings[-1].message))
+            self.assertIn(self.deprecation._fields["old"].deprecated, str(w.warnings[-1].message))
 
     def testDeprecationOutput(self):
-        """Test that a deprecated field is not written out unless it is set.
-        """
+        """Test that a deprecated field is not written out unless it is set."""
         stream = io.StringIO()
         self.deprecation.saveToStream(stream)
         self.assertNotIn("config.old", stream.getvalue())
@@ -159,7 +159,7 @@ class ConfigTest(unittest.TestCase):
 
         self.inner.validate()
         self.assertRaises(ValueError, setattr, self.outer.i, "f", -5)
-        self.outer.i.f = 10.
+        self.outer.i.f = 10.0
         self.outer.validate()
 
         try:
@@ -182,35 +182,62 @@ class ConfigTest(unittest.TestCase):
         self.comp.validate()
 
     def testRangeFieldConstructor(self):
-        """Test RangeField constructor's checking of min, max
-        """
+        """Test RangeField constructor's checking of min, max"""
         val = 3
-        self.assertRaises(ValueError, pexConfig.RangeField, "", int, default=val, min=val, max=val-1)
-        self.assertRaises(ValueError, pexConfig.RangeField, "", float, default=val, min=val, max=val-1e-15)
+        self.assertRaises(ValueError, pexConfig.RangeField, "", int, default=val, min=val, max=val - 1)
+        self.assertRaises(ValueError, pexConfig.RangeField, "", float, default=val, min=val, max=val - 1e-15)
         for inclusiveMin, inclusiveMax in itertools.product((False, True), (False, True)):
             if inclusiveMin and inclusiveMax:
                 # should not raise
                 class Cfg1(pexConfig.Config):
-                    r1 = pexConfig.RangeField(doc="", dtype=int,
-                                              default=val, min=val, max=val, inclusiveMin=inclusiveMin,
-                                              inclusiveMax=inclusiveMax)
-                    r2 = pexConfig.RangeField(doc="", dtype=float,
-                                              default=val, min=val, max=val, inclusiveMin=inclusiveMin,
-                                              inclusiveMax=inclusiveMax)
+                    r1 = pexConfig.RangeField(
+                        doc="",
+                        dtype=int,
+                        default=val,
+                        min=val,
+                        max=val,
+                        inclusiveMin=inclusiveMin,
+                        inclusiveMax=inclusiveMax,
+                    )
+                    r2 = pexConfig.RangeField(
+                        doc="",
+                        dtype=float,
+                        default=val,
+                        min=val,
+                        max=val,
+                        inclusiveMin=inclusiveMin,
+                        inclusiveMax=inclusiveMax,
+                    )
+
                 Cfg1()
             else:
                 # raise while constructing the RangeField (hence cannot make
                 # it part of a Config)
-                self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=int,
-                                  default=val, min=val, max=val, inclusiveMin=inclusiveMin,
-                                  inclusiveMax=inclusiveMax)
-                self.assertRaises(ValueError, pexConfig.RangeField, doc="", dtype=float,
-                                  default=val, min=val, max=val, inclusiveMin=inclusiveMin,
-                                  inclusiveMax=inclusiveMax)
+                self.assertRaises(
+                    ValueError,
+                    pexConfig.RangeField,
+                    doc="",
+                    dtype=int,
+                    default=val,
+                    min=val,
+                    max=val,
+                    inclusiveMin=inclusiveMin,
+                    inclusiveMax=inclusiveMax,
+                )
+                self.assertRaises(
+                    ValueError,
+                    pexConfig.RangeField,
+                    doc="",
+                    dtype=float,
+                    default=val,
+                    min=val,
+                    max=val,
+                    inclusiveMin=inclusiveMin,
+                    inclusiveMax=inclusiveMax,
+                )
 
     def testRangeFieldDefault(self):
-        """Test RangeField's checking of the default value
-        """
+        """Test RangeField's checking of the default value"""
         minVal = 3
         maxVal = 4
         for val, inclusiveMin, inclusiveMax, shouldRaise in (
@@ -219,15 +246,29 @@ class ConfigTest(unittest.TestCase):
             (maxVal, True, False, True),
             (maxVal, True, True, False),
         ):
+
             class Cfg1(pexConfig.Config):
-                r = pexConfig.RangeField(doc="", dtype=int,
-                                         default=val, min=minVal, max=maxVal,
-                                         inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                r = pexConfig.RangeField(
+                    doc="",
+                    dtype=int,
+                    default=val,
+                    min=minVal,
+                    max=maxVal,
+                    inclusiveMin=inclusiveMin,
+                    inclusiveMax=inclusiveMax,
+                )
 
             class Cfg2(pexConfig.Config):
-                r2 = pexConfig.RangeField(doc="", dtype=float,
-                                          default=val, min=minVal, max=maxVal,
-                                          inclusiveMin=inclusiveMin, inclusiveMax=inclusiveMax)
+                r2 = pexConfig.RangeField(
+                    doc="",
+                    dtype=float,
+                    default=val,
+                    min=minVal,
+                    max=maxVal,
+                    inclusiveMin=inclusiveMin,
+                    inclusiveMax=inclusiveMax,
+                )
+
         if shouldRaise:
             self.assertRaises(pexConfig.FieldValidationError, Cfg1)
             self.assertRaises(pexConfig.FieldValidationError, Cfg2)
@@ -238,7 +279,7 @@ class ConfigTest(unittest.TestCase):
     def testSave(self):
         self.comp.r = "BBB"
         self.comp.p = "AAA"
-        self.comp.c.f = 5.
+        self.comp.c.f = 5.0
         self.comp.save("roundtrip.test")
 
         roundTrip = Complex()
@@ -311,6 +352,7 @@ class ConfigTest(unittest.TestCase):
 
         class FFF(AAA, DDD):
             pass
+
         f = FFF()
         self.assertEqual(f._fields["a"].dtype, int)
         self.assertIn("a", f.toDict())
@@ -318,10 +360,11 @@ class ConfigTest(unittest.TestCase):
 
         # test inheritance from non Config objects
         class GGG:
-            a = pexConfig.Field("AAA.a", float, default=10.)
+            a = pexConfig.Field("AAA.a", float, default=10.0)
 
         class HHH(GGG, AAA):
             pass
+
         h = HHH()
         self.assertEqual(h._fields["a"].dtype, float)
         self.assertIn("a", h.toDict())
@@ -331,6 +374,7 @@ class ConfigTest(unittest.TestCase):
 
         class III(AAA):
             pass
+
         III.a.default = 5
 
         self.assertEqual(III.a.default, 5)
@@ -357,7 +401,7 @@ class ConfigTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, self.comp.p["AAA"], "f", 5.0)
 
     def checkImportRoundTrip(self, importStatement, searchString, shouldBeThere):
-        self.comp.c.f = 5.
+        self.comp.c.f = 5.0
 
         # Generate a Config through loading
         stream = io.StringIO()
@@ -384,12 +428,15 @@ class ConfigTest(unittest.TestCase):
 
     def testBadImports(self):
         dummy = "somethingThatDoesntExist"
-        importing = """
+        importing = (
+            """
 try:
     import %s
 except ImportError:
     pass
-""" % dummy
+"""
+            % dummy
+        )
         self.checkImportRoundTrip(importing, dummy, False)
 
     def testPickle(self):
@@ -431,6 +478,7 @@ except ImportError:
 
         def outFunc(msg):
             outList.append(msg)
+
         simple2.b = True
         simple2.ll.append(4)
         simple2.d["foo"] = "var"
@@ -446,7 +494,7 @@ except ImportError:
         self.simple.d["foo"] = "vast"
         self.simple.ll.append(5)
         self.simple.b = True
-        self.simple.f += 1E8
+        self.simple.f += 1e8
         self.assertFalse(self.simple.compare(simple2, shortcut=False, output=outFunc))
         output = "\n".join(outList)
         self.assertIn("Inequality in f", output)
@@ -455,7 +503,7 @@ except ImportError:
         del outList[:]
         comp2.r["BBB"].f = 1.0  # changing the non-selected item shouldn't break equality
         self.assertTrue(self.comp.compare(comp2))
-        comp2.r["AAA"].i = 56   # changing the selected item should break equality
+        comp2.r["AAA"].i = 56  # changing the selected item should break equality
         comp2.c.f = 1.0
         self.assertFalse(self.comp.compare(comp2, shortcut=False, output=outFunc))
         output = "\n".join(outList)

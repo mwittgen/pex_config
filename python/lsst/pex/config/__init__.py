@@ -19,17 +19,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .choiceField import *
 from .comparison import *
 from .config import *
-from .rangeField import *
-from .choiceField import *
-from .listField import *
-from .dictField import *
-from .configField import *
 from .configChoiceField import *
-from .configurableField import *
 from .configDictField import *
+from .configField import *
+from .configurableField import *
 from .convert import *
-from .wrap import *
+from .dictField import *
+from .listField import *
+from .rangeField import *
 from .registry import *
 from .version import *
+from .wrap import *

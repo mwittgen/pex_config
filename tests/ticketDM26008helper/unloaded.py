@@ -32,12 +32,14 @@ class Unloaded(pexConfig.Config):
     i = pexConfig.Field("integer test", int, optional=True)
     f = pexConfig.Field("float test", float, default=3.0)
     b = pexConfig.Field("boolean test", bool, default=False, optional=False)
-    c = pexConfig.ChoiceField("choice test", str, default="Hello",
-                              allowed={"Hello": "First choice", "World": "second choice"})
-    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False,
-                             min=3.0, inclusiveMin=True)
-    ll = pexConfig.ListField("list test", int, default=[1, 2, 3], maxLength=5,
-                             itemCheck=lambda x: x is not None and x > 0)
-    d = pexConfig.DictField("dict test", str, str, default={"key": "value"},
-                            itemCheck=lambda x: x.startswith('v'))
+    c = pexConfig.ChoiceField(
+        "choice test", str, default="Hello", allowed={"Hello": "First choice", "World": "second choice"}
+    )
+    r = pexConfig.RangeField("Range test", float, default=3.0, optional=False, min=3.0, inclusiveMin=True)
+    ll = pexConfig.ListField(
+        "list test", int, default=[1, 2, 3], maxLength=5, itemCheck=lambda x: x is not None and x > 0
+    )
+    d = pexConfig.DictField(
+        "dict test", str, str, default={"key": "value"}, itemCheck=lambda x: x.startswith("v")
+    )
     n = pexConfig.Field("nan test", float, default=float("NAN"))

@@ -27,6 +27,7 @@
 
 import os
 import unittest
+
 import lsst.pex.config as pexConf
 
 
@@ -53,24 +54,30 @@ class Config2(pexConf.Config):
 class ConfigurableFieldTest(unittest.TestCase):
     def testConstructor(self):
         try:
+
             class BadTarget(pexConf.Config):
                 d = pexConf.ConfigurableField("...", target=None)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Uncallable targets should not be allowed")
 
         try:
+
             class NoConfigClass(pexConf.Config):
                 d = pexConf.ConfigurableField("...", target=Target2)
+
         except Exception:
             pass
         else:
             raise SyntaxError("Missing ConfigClass should not be allowed")
 
         try:
+
             class BadConfigClass(pexConf.Config):
                 d = pexConf.DictField("...", target=Target2, ConfigClass=Target2)
+
         except Exception:
             pass
         else:

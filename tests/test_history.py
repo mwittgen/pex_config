@@ -26,12 +26,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+
 import lsst.pex.config as pexConfig
 import lsst.pex.config.history as pexConfigHistory
 
 
 class PexTestConfig(pexConfig.Config):
-    a = pexConfig.Field('Parameter A', float, default=1.0)
+    a = pexConfig.Field("Parameter A", float, default=1.0)
 
 
 class HistoryTest(unittest.TestCase):
@@ -68,10 +69,14 @@ class HistoryTest(unittest.TestCase):
     b.update(a=4.0)"""
 
         self.assertTrue(output.startswith("a\n1.0"))
-        self.assertIn("""
+        print(output)
+        self.assertIn(
+            """
     b = PexTestConfig()
-    a = pexConfig.Field('Parameter A', float, default=1.0)
-4.0""", output)
+    a = pexConfig.Field("Parameter A", float, default=1.0)
+4.0""",
+            output,
+        )
 
         self.assertIn("\n    b.update(a=4.0)", output)
 

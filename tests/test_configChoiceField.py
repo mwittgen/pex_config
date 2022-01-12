@@ -27,6 +27,7 @@
 
 import os
 import unittest
+
 import lsst.pex.config as pexConfig
 
 
@@ -47,18 +48,18 @@ TYPEMAP = {"AAA": Config1, "BBB": Config2, "CCC": Config1}
 
 
 class Config3(pexConfig.Config):
-    a = pexConfig.ConfigChoiceField(doc="single non-optional",
-                                    typemap=TYPEMAP,
-                                    default="AAA", multi=False, optional=False)
-    b = pexConfig.ConfigChoiceField(doc="single optional",
-                                    typemap=TYPEMAP,
-                                    default="AAA", multi=False, optional=True)
-    c = pexConfig.ConfigChoiceField(doc="multi non-optional",
-                                    typemap=TYPEMAP,
-                                    default=["AAA"], multi=True, optional=False)
-    d = pexConfig.ConfigChoiceField(doc="multi optional",
-                                    typemap=TYPEMAP,
-                                    default=["AAA"], multi=True, optional=True)
+    a = pexConfig.ConfigChoiceField(
+        doc="single non-optional", typemap=TYPEMAP, default="AAA", multi=False, optional=False
+    )
+    b = pexConfig.ConfigChoiceField(
+        doc="single optional", typemap=TYPEMAP, default="AAA", multi=False, optional=True
+    )
+    c = pexConfig.ConfigChoiceField(
+        doc="multi non-optional", typemap=TYPEMAP, default=["AAA"], multi=True, optional=False
+    )
+    d = pexConfig.ConfigChoiceField(
+        doc="multi optional", typemap=TYPEMAP, default=["AAA"], multi=True, optional=True
+    )
 
 
 class ConfigChoiceFieldTest(unittest.TestCase):
@@ -131,8 +132,7 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.config.c.names.discard("AAA")
 
         # test bad assignment
-        self.assertRaises(pexConfig.FieldValidationError,
-                          setattr, self.config.c, "names", "AAA")
+        self.assertRaises(pexConfig.FieldValidationError, setattr, self.config.c, "names", "AAA")
         self.config.c.names = ["AAA"]
 
     def testNoneValue(self):

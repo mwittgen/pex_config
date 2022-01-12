@@ -25,7 +25,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['getCallerFrame', 'getStackFrame', 'StackFrame', 'getCallStack']
+__all__ = ["getCallerFrame", "getStackFrame", "StackFrame", "getCallStack"]
 
 import inspect
 import linecache
@@ -108,7 +108,7 @@ class StackFrame:
     def __init__(self, filename, lineno, function, content=None):
         loc = filename.rfind(self._STRIP)
         if loc > 0:
-            filename = filename[loc + len(self._STRIP):]
+            filename = filename[loc + len(self._STRIP) :]
         self.filename = filename
         self.lineno = lineno
         self.function = function
@@ -116,8 +116,7 @@ class StackFrame:
 
     @property
     def content(self):
-        """Content being executed (loaded on demand) (`str`).
-        """
+        """Content being executed (loaded on demand) (`str`)."""
         if self._content is None:
             self._content = linecache.getline(self.filename, self.lineno).strip()
         return self._content

@@ -27,14 +27,14 @@
 
 __all__ = ("wrap", "makeConfigClass")
 
+import importlib
 import inspect
 import re
-import importlib
 
+from .callStack import StackFrame, getCallerFrame, getCallStack
 from .config import Config, Field
-from .listField import ListField, List
 from .configField import ConfigField
-from .callStack import getCallerFrame, getCallStack, StackFrame
+from .listField import List, ListField
 
 _dtypeMap = {
     "bool": bool,
@@ -42,7 +42,7 @@ _dtypeMap = {
     "double": float,
     "float": float,
     "std::int64_t": int,
-    "std::string": str
+    "std::string": str,
 }
 """Mapping from C++ types to Python type (`dict`)
 
@@ -184,7 +184,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
     # that indicate a field defined by one of the macros in pex/config.h.
     for attr in dir(ctrl):
         if attr.startswith("_type_"):
-            k = attr[len("_type_"):]
+            k = attr[len("_type_") :]
             getDoc = "_doc_" + k
             getModule = "_module_" + k
             getType = attr
@@ -256,8 +256,7 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
         values = {}
         for k, f in fields.items():
             if isinstance(f, ConfigField):
-                getattr(self, k).readControl(getattr(control, k),
-                                             __at=__at, __label=__label, __reset=__reset)
+                getattr(self, k).readControl(getattr(control, k), __at=__at, __label=__label, __reset=__reset)
             else:
                 values[k] = getattr(control, k)
         if __reset:
@@ -281,8 +280,12 @@ def makeConfigClass(ctrl, name=None, base=Config, doc=None, module=None, cls=Non
             r = self.Control()
             # Indicate in the history that these values came from C++, even
             # if we can't say which line
-            self.readControl(r, __at=[StackFrame(ctrl.__name__ + " C++", 0, "setDefaults", "")],
-                             __label="defaults", __reset=True)
+            self.readControl(
+                r,
+                __at=[StackFrame(ctrl.__name__ + " C++", 0, "setDefaults", "")],
+                __label="defaults",
+                __reset=True,
+            )
         except Exception:
             pass  # if we can't instantiate the Control, don't set defaults
 
@@ -326,6 +329,8 @@ def wrap(ctrl):
     --------
     makeConfigClass
     """
+
     def decorate(cls):
         return makeConfigClass(ctrl, cls=cls)
+
     return decorate
