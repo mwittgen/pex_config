@@ -86,7 +86,13 @@ def _helper(config, ps, prefix, dict_, ext_dtype=None):
             elif dtype is bool:
                 ps.setBool(name, v)
             elif dtype is int:
-                ps.setLongLong(name, v)
+                # User code requires that small numbers are stored in
+                # small integers and LongLong be reserved for larger
+                # ints. This means that we have to either use an
+                # optimized version of the logic from PropertySet
+                # (we know it does not exist and that it is an integer type)
+                # or just use the generic setter.
+                ps.set(name, v)
             elif dtype is float:
                 ps.setDouble(name, v)
             else:
