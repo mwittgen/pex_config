@@ -382,6 +382,10 @@ class ConfigTest(unittest.TestCase):
 
     @unittest.skipIf(dafBase is None, "lsst.daf.base is required")
     def testConvertPropertySet(self):
+        # assertEqual for hierarchical dicts does not seem to sort keys
+        # so instead convert to JSON strings before comparing.
+        import json
+
         ps = pexConfig.makePropertySet(self.simple)
         self.assertFalse(ps.exists("i"))
         self.assertEqual(ps.getScalar("f"), self.simple.f)
@@ -391,6 +395,13 @@ class ConfigTest(unittest.TestCase):
 
         ps = pexConfig.makePropertySet(self.comp)
         self.assertEqual(ps.getScalar("c.f"), self.comp.c.f)
+
+        # Check property set matches the dict.
+        # Have to remove the None item from the dict.
+        config_dict = self.comp.toDict()
+        for k in ("p", "r"):
+            del config_dict[k]["values"]["AAA"]["i"]
+        self.assertEqual(json.dumps(ps.toDict(), sort_keys=True), json.dumps(config_dict, sort_keys=True))
 
     def testFreeze(self):
         self.comp.freeze()

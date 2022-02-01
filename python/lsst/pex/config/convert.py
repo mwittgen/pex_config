@@ -33,13 +33,65 @@ except ImportError:
     dafBase = None
 
 
-def _helper(ps, prefix, dict_):
+def _helper(config, ps, prefix, dict_, ext_dtype=None):
+    """Convert to PropertySet using types from the Config."""
+    try:
+        fields = config._fields
+    except AttributeError:
+        # dictField.Dict will not have _fields attribute.
+        fields = {}
+
     for k, v in dict_.items():
         name = prefix + "." + k if prefix is not None else k
         if isinstance(v, dict):
-            _helper(ps, name, v)
+            field = fields.get(k, None)
+
+            if hasattr(field, "itemtype"):
+                itemtype = field.itemtype
+            else:
+                itemtype = None
+
+            if hasattr(field, "typemap"):
+                # ChoiceField needs special layout.
+                # name: Default choice
+                # values: {ChoiceA: {}, ChoiceB: {}}
+                config_choice = getattr(config, k)
+                # Follow the toDict code for ConfigChoiceField
+                if hasattr(config_choice, "multi") and config_choice.multi:
+                    ps[f"{name}.names"] = config_choice.names
+                else:
+                    ps[f"{name}.name"] = config_choice.name
+                for k, v in config_choice.items():
+                    sub_name = f"{name}.values.{k}"
+                    _helper(config_choice[k], ps, sub_name, v.toDict())
+                continue
+
+            # Pass in the item type if we have it.
+            _helper(getattr(config, k), ps, name, v, ext_dtype=itemtype)
         elif v is not None:
-            ps.set(name, v)
+            try:
+                field = fields[k]
+            except KeyError:
+                dtype = ext_dtype
+                field = None
+            else:
+                dtype = field.dtype
+
+            # DictField and ListField have a dtype so ask for it.
+            if hasattr(field, "itemtype"):
+                dtype = field.itemtype
+
+            if dtype is str:
+                ps.setString(name, v)
+            elif dtype is bool:
+                ps.setBool(name, v)
+            elif dtype is int:
+                ps.setLongLong(name, v)
+            elif dtype is float:
+                ps.setDouble(name, v)
+            else:
+                # Fall back should not happen.
+                ps.set(name, v)
 
 
 def makePropertySet(config):
@@ -66,7 +118,7 @@ def makePropertySet(config):
 
     if config is not None:
         ps = dafBase.PropertySet()
-        _helper(ps, None, config.toDict())
+        _helper(config, ps, None, config.toDict())
         return ps
     else:
         return None
