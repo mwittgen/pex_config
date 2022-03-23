@@ -33,7 +33,7 @@ import weakref
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, compareScalars, getComparisonName
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr, UnexpectedProxyUsageError
 
 
 class SelectionSet(collections.abc.MutableSet):
@@ -134,6 +134,13 @@ class SelectionSet(collections.abc.MutableSet):
 
     def __str__(self):
         return str(list(self._set))
+
+    def __reduce__(self):
+        raise UnexpectedProxyUsageError(
+            f"Proxy container for config field {self._field.name} cannot "
+            "be pickled; it should be converted to a built-in container before "
+            "being assigned to other objects or variables."
+        )
 
 
 class ConfigInstanceDict(collections.abc.Mapping):
@@ -342,6 +349,13 @@ class ConfigInstanceDict(collections.abc.Mapping):
         """
         if self._typemap is None:
             self._typemap = copy.deepcopy(self.types)
+
+    def __reduce__(self):
+        raise UnexpectedProxyUsageError(
+            f"Proxy container for config field {self._field.name} cannot "
+            "be pickled; it should be converted to a built-in container before "
+            "being assigned to other objects or variables."
+        )
 
 
 class ConfigChoiceField(Field):

@@ -26,6 +26,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import pickle
 import unittest
 
 import lsst.pex.config as pexConf
@@ -139,6 +140,13 @@ class ConfigurableFieldTest(unittest.TestCase):
 
         self.assertEqual(c.c2.f, r.c2.f)
         self.assertEqual(c.c2.target, r.c2.target)
+
+    def testNoPickle(self):
+        """Test that pickle support is disabled for the proxy container.
+        """
+        c = Config2()
+        with self.assertRaises(pexConf.UnexpectedProxyUsageError):
+            pickle.dumps(c.c2)
 
 
 if __name__ == "__main__":

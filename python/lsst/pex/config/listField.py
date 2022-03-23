@@ -32,7 +32,15 @@ import weakref
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareScalars, getComparisonName
-from .config import Config, Field, FieldValidationError, _autocast, _joinNamePath, _typeStr
+from .config import (
+    Config,
+    Field,
+    FieldValidationError,
+    UnexpectedProxyUsageError,
+    _autocast,
+    _joinNamePath,
+    _typeStr,
+)
 
 
 class List(collections.abc.MutableSequence):
@@ -220,6 +228,13 @@ class List(collections.abc.MutableSequence):
             # We throw everything else.
             msg = "%s has no attribute %s" % (_typeStr(self._field), attr)
             raise FieldValidationError(self._field, self._config, msg)
+
+    def __reduce__(self):
+        raise UnexpectedProxyUsageError(
+            f"Proxy container for config field {self._field.name} cannot "
+            "be pickled; it should be converted to a built-in container before "
+            "being assigned to other objects or variables."
+        )
 
 
 class ListField(Field):
