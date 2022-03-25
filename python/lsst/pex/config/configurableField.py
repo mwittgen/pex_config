@@ -32,7 +32,7 @@ import weakref
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr, UnexpectedProxyUsageError
 
 
 class ConfigurableInstance:
@@ -172,6 +172,14 @@ class ConfigurableInstance:
             if at is None:
                 at = getCallStack()
             self._value.__delattr__(name, at=at, label=label)
+
+    def __reduce__(self):
+        raise UnexpectedProxyUsageError(
+            f"Proxy object for config field {self._field.name} cannot "
+            "be pickled; it should be converted to a normal `Config` instance "
+            f"via the `value` property before being assigned to other objects "
+            "or variables."
+        )
 
 
 class ConfigurableField(Field):

@@ -25,7 +25,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError")
+__all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError", "UnexpectedProxyUsageError")
 
 import copy
 import importlib
@@ -60,6 +60,12 @@ if yaml:
         YamlLoaders += (CLoader,)
     except ImportError:
         pass
+
+
+class UnexpectedProxyUsageError(TypeError):
+    """Exception raised when a proxy class is used in a context that suggests
+    it should have already been converted to the thing it proxies.
+    """
 
 
 def _joinNamePath(prefix=None, name=None, index=None):
