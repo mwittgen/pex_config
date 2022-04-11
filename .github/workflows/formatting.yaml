@@ -21,7 +21,7 @@ jobs:
         run: pip install isort black
 
       - name: Run isort
-        run: isort --check-only python/ tests/
+        run: isort --check-only --diff python/ tests/
 
       - name: Run black
         run: black --check --verbose --diff python/ tests/
