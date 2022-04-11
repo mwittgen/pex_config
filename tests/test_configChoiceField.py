@@ -149,8 +149,7 @@ class ConfigChoiceFieldTest(unittest.TestCase):
         self.config.validate()
 
     def testNoPickle(self):
-        """Test that pickle support is disabled for the proxy container.
-        """
+        """Test that pickle support is disabled for the proxy container."""
         with self.assertRaises(pexConfig.UnexpectedProxyUsageError):
             pickle.dumps(self.config.c)
         with self.assertRaises(pexConfig.UnexpectedProxyUsageError):

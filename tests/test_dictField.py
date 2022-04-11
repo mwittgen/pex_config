@@ -144,8 +144,7 @@ class DictFieldTest(unittest.TestCase):
         self.assertTrue(pexConfig.compareConfigs("test", c1, c2))
 
     def testNoPickle(self):
-        """Test that pickle support is disabled for the proxy container.
-        """
+        """Test that pickle support is disabled for the proxy container."""
         c = Config1()
         with self.assertRaises(pexConfig.UnexpectedProxyUsageError):
             pickle.dumps(c.d4)
