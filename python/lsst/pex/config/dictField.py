@@ -36,10 +36,10 @@ from .config import (
     Config,
     Field,
     FieldValidationError,
+    UnexpectedProxyUsageError,
     _autocast,
     _joinNamePath,
     _typeStr,
-    UnexpectedProxyUsageError,
 )
 
 
