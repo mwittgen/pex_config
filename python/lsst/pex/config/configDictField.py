@@ -213,6 +213,14 @@ class ConfigDictField(DictField):
 
         return dict_
 
+    def _collectImports(self, instance, imports):
+        # docstring inherited from Field
+        configDict = self.__get__(instance)
+        if configDict is not None:
+            for v in configDict.values():
+                v._collectImports()
+                imports |= v._imports
+
     def save(self, outfile, instance):
         configDict = self.__get__(instance)
         fullname = _joinNamePath(instance._name, self.name)

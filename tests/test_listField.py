@@ -163,8 +163,7 @@ class ListFieldTest(unittest.TestCase):
         self.assertRaises(pexConfig.FieldValidationError, setattr, c.l1, "should", "fail")
 
     def testNoPickle(self):
-        """Test that pickle support is disabled for the proxy container.
-        """
+        """Test that pickle support is disabled for the proxy container."""
         c = Config2()
         with self.assertRaises(pexConfig.UnexpectedProxyUsageError):
             pickle.dumps(c.ls)

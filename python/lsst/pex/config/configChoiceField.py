@@ -33,7 +33,7 @@ import weakref
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, compareScalars, getComparisonName
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr, UnexpectedProxyUsageError
+from .config import Config, Field, FieldValidationError, UnexpectedProxyUsageError, _joinNamePath, _typeStr
 
 
 class SelectionSet(collections.abc.MutableSet):

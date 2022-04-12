@@ -142,8 +142,7 @@ class ConfigurableFieldTest(unittest.TestCase):
         self.assertEqual(c.c2.target, r.c2.target)
 
     def testNoPickle(self):
-        """Test that pickle support is disabled for the proxy container.
-        """
+        """Test that pickle support is disabled for the proxy container."""
         c = Config2()
         with self.assertRaises(pexConf.UnexpectedProxyUsageError):
             pickle.dumps(c.c2)

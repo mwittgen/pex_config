@@ -202,17 +202,13 @@ def format(config, name=None, writeSourceLine=True, prefix="", verbose=False):
     for value, stack, label in config.history.get(name, []):
         output = []
         for frame in stack:
-            if (
-                frame.function
-                in (
-                    "__new__",
-                    "__set__",
-                    "__setattr__",
-                    "execfile",
-                    "wrapper",
-                )
-                or os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py")
-            ):
+            if frame.function in (
+                "__new__",
+                "__set__",
+                "__setattr__",
+                "execfile",
+                "wrapper",
+            ) or os.path.split(frame.filename)[1] in ("argparse.py", "argumentParser.py"):
                 if not verbose:
                     continue
 

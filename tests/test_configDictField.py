@@ -34,6 +34,10 @@ import lsst.pex.config as pexConfig
 class Config1(pexConfig.Config):
     f = pexConfig.Field("f", float, default=3.0)
 
+    def _collectImports(self):
+        # Exists to test that imports of dict values are collected
+        self._imports.add("builtins")
+
 
 class Config2(pexConfig.Config):
     d1 = pexConfig.ConfigDictField("d1", keytype=str, itemtype=Config1, itemCheck=lambda x: x.f > 0)
@@ -113,6 +117,10 @@ class ConfigDictFieldTest(unittest.TestCase):
     def testSave(self):
         c = Config2(d1={"a": Config1(f=4)})
         c.save("configDictTest.py")
+
+        # verify _collectImports is called on all the configDictValues
+        stringOutput = c.saveToString()
+        self.assertIn("import builtins", stringOutput)
 
         rt = Config2()
         rt.load("configDictTest.py")
