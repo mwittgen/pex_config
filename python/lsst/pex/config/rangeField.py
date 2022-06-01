@@ -53,11 +53,9 @@ class RangeField(Field):
         Maximum value accepted in the range. If `None`, the range has no
         upper bound (equivalent to positive infinity).
     inclusiveMin : `bool`, optional
-        If `True` (default), the ``min`` value is included in the allowed
-        range.
+        If `True`, the ``min`` value is included in the allowed range.
     inclusiveMax : `bool`, optional
-        If `True` (default), the ``max`` value is included in the allowed
-        range.
+        If `True`, the ``max`` value is included in the allowed range.
     deprecated : None or `str`, optional
         A description of why this Field is deprecated, including removal date.
         If not None, the string is appended to the docstring for this Field.
