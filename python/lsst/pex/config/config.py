@@ -819,90 +819,37 @@ class Config(metaclass=ConfigMeta):
 
         Returns
         -------
-        names : `list`
+        names : `dict_keys`
             List of `lsst.pex.config.Field` names.
 
         See also
         --------
         lsst.pex.config.Config.iterkeys
         """
-        return list(self._storage.keys())
+        return self._storage.keys()
 
     def values(self):
         """Get field values.
 
         Returns
         -------
-        values : `list`
-            List of field values.
-
-        See also
-        --------
-        lsst.pex.config.Config.itervalues
+        values : `dict_values`
+            Iterator of field values.
         """
-        return list(self._storage.values())
+        return self._storage.values()
 
     def items(self):
         """Get configurations as ``(field name, field value)`` pairs.
 
         Returns
         -------
-        items : `list`
-            List of tuples for each configuration. Tuple items are:
+        items : `dict_items`
+            Iterator of tuples for each configuration. Tuple items are:
 
             0. Field name.
             1. Field value.
-
-        See also
-        --------
-        lsst.pex.config.Config.iteritems
         """
-        return list(self._storage.items())
-
-    def iteritems(self):
-        """Iterate over (field name, field value) pairs.
-
-        Yields
-        ------
-        item : `tuple`
-            Tuple items are:
-
-            0. Field name.
-            1. Field value.
-
-        See also
-        --------
-        lsst.pex.config.Config.items
-        """
-        return iter(self._storage.items())
-
-    def itervalues(self):
-        """Iterate over field values.
-
-        Yields
-        ------
-        value : obj
-            A field value.
-
-        See also
-        --------
-        lsst.pex.config.Config.values
-        """
-        return iter(self.storage.values())
-
-    def iterkeys(self):
-        """Iterate over field names
-
-        Yields
-        ------
-        key : `str`
-            A field's key (attribute name).
-
-        See also
-        --------
-        lsst.pex.config.Config.values
-        """
-        return iter(self.storage.keys())
+        return self._storage.items()
 
     def __contains__(self, name):
         """!Return True if the specified field exists in this config

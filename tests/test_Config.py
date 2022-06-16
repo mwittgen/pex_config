@@ -535,6 +535,19 @@ except ImportError:
         for name in names:
             self.assertTrue(hasattr(self.simple, name))
 
+    def testIteration(self):
+        self.assertIn("ll", self.simple)
+        self.assertIn("ll", self.simple.keys())
+        self.assertIn("Hello", self.simple.values())
+        self.assertEqual(len(self.simple.values()), 8)
+
+        for k, v, (k1, v1) in zip(self.simple.keys(), self.simple.values(), self.simple.items()):
+            self.assertEqual(k, k1)
+            if k == "n":
+                self.assertNotEqual(v, v1)
+            else:
+                self.assertEqual(v, v1)
+
 
 if __name__ == "__main__":
     unittest.main()
