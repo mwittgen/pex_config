@@ -997,11 +997,6 @@ class Config(metaclass=ConfigMeta):
 
             Then this config's field ``myField`` is set to ``5``.
 
-            **Deprecated:** For backwards compatibility, older config files
-            that use ``root="root"`` instead of ``root="config"`` will be
-            loaded with a warning printed to `sys.stderr`. This feature will be
-            removed at some point.
-
         See also
         --------
         lsst.pex.config.Config.loadFromStream
@@ -1033,11 +1028,6 @@ class Config(metaclass=ConfigMeta):
                 config.myField = 5
 
             Then this config's field ``myField`` is set to ``5``.
-
-            **Deprecated:** For backwards compatibility, older config files
-            that use ``root="root"`` instead of ``root="config"`` will be
-            loaded with a warning printed to `sys.stderr`. This feature will be
-            removed at some point.
         filename : `str`, optional
             Name of the configuration file, or `None` if unknown or contained
             in the stream. Used for error reporting.
@@ -1082,11 +1072,6 @@ class Config(metaclass=ConfigMeta):
                 config.myField = 5
 
             Then this config's field ``myField`` is set to ``5``.
-
-            **Deprecated:** For backwards compatibility, older config files
-            that use ``root="root"`` instead of ``root="config"`` will be
-            loaded with a warning printed to `sys.stderr`. This feature will be
-            removed at some point.
         filename : `str`, optional
             Name of the configuration file, or `None` if unknown or contained
             in the stream. Used for error reporting.
@@ -1105,20 +1090,8 @@ class Config(metaclass=ConfigMeta):
             filename = getattr(code, "co_filename", "?")
         with RecordingImporter() as importer:
             globals = {"__file__": filename}
-            try:
-                local = {root: self}
-                exec(code, globals, local)
-            except NameError as e:
-                if root == "config" and "root" in e.args[0]:
-                    print(
-                        f"Config override file {filename!r}"
-                        " appears to use 'root' instead of 'config'; trying with 'root'",
-                        file=sys.stderr,
-                    )
-                    local = {"root": self}
-                    exec(code, globals, local)
-                else:
-                    raise
+            local = {root: self}
+            exec(code, globals, local)
 
         self._imports.update(importer.getModules())
 
