@@ -24,8 +24,16 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
 
-__all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError", "UnexpectedProxyUsageError")
+__all__ = (
+    "Config",
+    "ConfigMeta",
+    "Field",
+    "FieldValidationError",
+    "UnexpectedProxyUsageError",
+    "FieldTypeVar",
+)
 
 import copy
 import importlib
@@ -37,6 +45,13 @@ import shutil
 import sys
 import tempfile
 import warnings
+from typing import Any, ForwardRef, Generic, Mapping, Optional, TypeVar, Union, cast, overload
+
+try:
+    from types import GenericAlias
+except ImportError:
+    # cover python 3.8 usage
+    GenericAlias = type(Mapping[int, int])
 
 # if YAML is not available that's fine and we simply don't register
 # the yaml representer since we know it won't be used.
@@ -44,14 +59,12 @@ try:
     import yaml
 except ImportError:
     yaml = None
-    YamlLoaders = ()
-    doImport = None
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, compareScalars, getComparisonName
 
 if yaml:
-    YamlLoaders = (yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader)
+    YamlLoaders: tuple[Any, ...] = (yaml.Loader, yaml.FullLoader, yaml.SafeLoader, yaml.UnsafeLoader)
 
     try:
         # CLoader is not always available
@@ -60,6 +73,38 @@ if yaml:
         YamlLoaders += (CLoader,)
     except ImportError:
         pass
+else:
+    YamlLoaders = ()
+    doImport = None
+
+
+if int(sys.version_info.minor) < 9:
+    genericAliasKwds = {"_root": True}
+else:
+    genericAliasKwds = {}
+
+
+class _PexConfigGenericAlias(GenericAlias, **genericAliasKwds):
+    """A Subclass of python's GenericAlias used in defining and instantiating
+    Generics.
+
+    This class differs from `types.GenericAlias` in that it calls a method
+    named _parseTypingArgs defined on Fields. This method gives Field and its
+    subclasses an opportunity to transform type parameters into class key word
+    arguments. Code authors do not need to implement any returns of this object
+    directly, and instead only need implement _parseTypingArgs, if a Field
+    subclass differs from the base class implementation.
+
+    This class is intended to be an implementation detail, returned from a
+    Field's `__class_getitem__` method.
+    """
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        origin_kwargs = self._parseTypingArgs(self.__args__, kwds)
+        return super().__call__(*args, **{**kwds, **origin_kwargs})
+
+
+FieldTypeVar = TypeVar("FieldTypeVar")
 
 
 class UnexpectedProxyUsageError(TypeError):
@@ -258,7 +303,7 @@ class FieldValidationError(ValueError):
         super().__init__(error)
 
 
-class Field:
+class Field(Generic[FieldTypeVar]):
     """A field in a `~lsst.pex.config.Config` that supports `int`, `float`,
     `complex`, `bool`, and `str` data types.
 
@@ -266,10 +311,11 @@ class Field:
     ----------
     doc : `str`
         A description of the field for users.
-    dtype : type
+    dtype : type, optional
         The field's data type. ``Field`` only supports basic data types:
         `int`, `float`, `complex`, `bool`, and `str`. See
-        `Field.supportedTypes`.
+        `Field.supportedTypes`. Optional if supplied as a typing argument to
+        the class.
     default : object, optional
         The field's default value.
     check : callable, optional
@@ -319,6 +365,24 @@ class Field:
     container type (like a `lsst.pex.config.List`) depending on the field's
     type. See the example, below.
 
+    Fields can be annotated with a type similar to other python classes (python
+    specification `here <https://peps.python.org/pep-0484/#generics>`_ ).
+    See the name field in the Config example below for an example of this.
+    Unlike most other uses in python, this has an effect at type checking *and*
+    runtime. If the type is specified with a class annotation, it will be used
+    as the value of the ``dtype`` in the ``Field`` and there is no need to
+    specify it as an argument during instantiation.
+
+    There are Some notes on dtype through type annotation syntax. Type
+    annotation syntax supports supplying the argument as a string of a type
+    name. i.e. "float", but this cannot be used to resolve circular references.
+    Type annotation syntax can be used on an identifier in addition to Class
+    assignment i.e. ``variable: Field[str] = Config.someField`` vs
+    ``someField = Field[str](doc="some doc"). However, this syntax is only
+    useful for annotating the type of the identifier (i.e. variable in previous
+    example) and does nothing for assigning the dtype of the ``Field``.
+
+
     Examples
     --------
     Instances of ``Field`` should be used as class attributes of
@@ -327,6 +391,7 @@ class Field:
     >>> from lsst.pex.config import Config, Field
     >>> class Example(Config):
     ...     myInt = Field("An integer field.", int, default=0)
+    ...     name = Field[str](doc="A string Field")
     ...
     >>> print(config.myInt)
     0
@@ -335,11 +400,83 @@ class Field:
     5
     """
 
+    name: str
+    """Identifier (variable name) used to refer to a Field within a Config
+    Class.
+    """
+
     supportedTypes = set((str, bool, float, int, complex))
     """Supported data types for field values (`set` of types).
     """
 
-    def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
+    @staticmethod
+    def _parseTypingArgs(
+        params: Union[tuple[type, ...], tuple[str, ...]], kwds: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        """Parses type annotations into keyword constructor arguments.
+
+        This is a special private method that interprets type arguments (i.e.
+        Field[str]) into keyword arguments to be passed on to the constructor.
+
+        Subclasses of Field can implement this method to customize how they
+        handle turning type parameters into keyword arguments (see DictField
+        for an example)
+
+        Parameters
+        ----------
+        params : `tuple` of `type` or `tuple` of str
+            Parameters passed to the type annotation. These will either be
+            types or strings. Strings are to interpreted as forward references
+            and will be treated as such.
+        kwds : `MutableMapping` with keys of `str` and values of `Any`
+            These are the user supplied keywords that are to be passed to the
+            Field constructor.
+
+        Returns
+        -------
+        kwds : `MutableMapping` with keys of `str` and values of `Any`
+            The mapping of keywords that will be passed onto the constructor
+            of the Field. Should be filled in with any information gleaned
+            from the input parameters.
+
+        Raises
+        ------
+        ValueError :
+            Raised if params is of incorrect length.
+            Raised if a forward reference could not be resolved
+            Raised if there is a conflict between params and values in kwds
+        """
+        if len(params) > 1:
+            raise ValueError("Only single type parameters are supported")
+        unpackedParams = params[0]
+        if isinstance(unpackedParams, str):
+            _typ = ForwardRef(unpackedParams)
+            # type ignore below because typeshed seems to be wrong. It
+            # indicates there are only 2 args, as it was in python 3.8, but
+            # 3.9+ takes 3 args. Attempt in old style and new style to
+            # work with both.
+            try:
+                result = _typ._evaluate(globals(), locals(), set())  # type: ignore
+            except TypeError:
+                # python 3.8 path
+                result = _typ._evaluate(globals(), locals())
+            if result is None:
+                raise ValueError("Could not deduce type from input")
+            unpackedParams = cast(type, result)
+        if "dtype" in kwds and kwds["dtype"] != unpackedParams:
+            raise ValueError("Conflicting definition for dtype")
+        elif "dtype" not in kwds:
+            kwds = {**kwds, **{"dtype": unpackedParams}}
+        return kwds
+
+    def __class_getitem__(cls, params: Union[tuple[type, ...], type, ForwardRef]):
+        return _PexConfigGenericAlias(cls, params)
+
+    def __init__(self, doc, dtype=None, default=None, check=None, optional=False, deprecated=None):
+        if dtype is None:
+            raise ValueError(
+                "dtype must either be supplied as an argument or as a type argument to the class"
+            )
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
 
@@ -570,6 +707,18 @@ class Field:
         """
         return self.__get__(instance)
 
+    @overload
+    def __get__(
+        self, instance: None, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> "Field[FieldTypeVar]":
+        ...
+
+    @overload
+    def __get__(
+        self, instance: "Config", owner: Any = None, at: Any = None, label: str = "default"
+    ) -> FieldTypeVar:
+        ...
+
     def __get__(self, instance, owner=None, at=None, label="default"):
         """Define how attribute access should occur on the Config instance
         This is invoked by the owning config object and should not be called
@@ -599,7 +748,9 @@ class Field:
                         " incorrectly initialized"
                     )
 
-    def __set__(self, instance, value, at=None, label="assignment"):
+    def __set__(
+        self, instance: "Config", value: Optional[FieldTypeVar], at: Any = None, label: str = "assignment"
+    ) -> None:
         """Set an attribute on the config instance.
 
         Parameters
@@ -736,7 +887,7 @@ class RecordingImporter:
 
     def __enter__(self):
         self.origMetaPath = sys.meta_path
-        sys.meta_path = [self] + sys.meta_path
+        sys.meta_path = [self] + sys.meta_path  # type: ignore
         return self
 
     def __exit__(self, *args):
@@ -764,7 +915,8 @@ class RecordingImporter:
         return self._modules
 
 
-class Config(metaclass=ConfigMeta):
+# type ignore because type checker thinks ConfigMeta is Generic when it is not
+class Config(metaclass=ConfigMeta):  # type: ignore
     """Base class for configuration (*config*) objects.
 
     Notes
@@ -809,6 +961,11 @@ class Config(metaclass=ConfigMeta):
     >>> print(config.listField)
     ['coffee', 'green tea', 'water', 'earl grey tea']
     """
+
+    _storage: dict[str, Any]
+    _fields: dict[str, Field]
+    _history: dict[str, list[Any]]
+    _imports: set[Any]
 
     def __iter__(self):
         """Iterate over fields."""

@@ -28,13 +28,16 @@
 __all__ = ["ListField"]
 
 import collections.abc
+import sys
 import weakref
+from typing import Any, Generic, Iterable, MutableSequence, Union, overload
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareScalars, getComparisonName
 from .config import (
     Config,
     Field,
+    FieldTypeVar,
     FieldValidationError,
     UnexpectedProxyUsageError,
     _autocast,
@@ -42,8 +45,13 @@ from .config import (
     _typeStr,
 )
 
+if int(sys.version_info.minor) < 9:
+    _bases = (collections.abc.MutableSequence, Generic[FieldTypeVar])
+else:
+    _bases = (collections.abc.MutableSequence[FieldTypeVar],)
 
-class List(collections.abc.MutableSequence):
+
+class List(*_bases):
     """List collection used internally by `ListField`.
 
     Parameters
@@ -90,8 +98,9 @@ class List(collections.abc.MutableSequence):
     def _config(self) -> Config:
         # Config Fields should never outlive their config class instance
         # assert that as such here
-        assert self._config_() is not None
-        return self._config_()
+        value = self._config_()
+        assert value is not None
+        return value
 
     def validateItem(self, i, x):
         """Validate an item to determine if it can be included in the list.
@@ -138,6 +147,23 @@ class List(collections.abc.MutableSequence):
     def __len__(self):
         return len(self._list)
 
+    @overload
+    def __setitem__(
+        self, i: int, x: FieldTypeVar, at: Any = None, label: str = "setitem", setHistory: bool = True
+    ) -> None:
+        ...
+
+    @overload
+    def __setitem__(
+        self,
+        i: slice,
+        x: Iterable[FieldTypeVar],
+        at: Any = None,
+        label: str = "setitem",
+        setHistory: bool = True,
+    ) -> None:
+        ...
+
     def __setitem__(self, i, x, at=None, label="setitem", setHistory=True):
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
@@ -157,6 +183,14 @@ class List(collections.abc.MutableSequence):
             if at is None:
                 at = getCallStack()
             self.history.append((list(self._list), at, label))
+
+    @overload
+    def __getitem__(self, i: int) -> FieldTypeVar:
+        ...
+
+    @overload
+    def __getitem__(self, i: slice) -> MutableSequence[FieldTypeVar]:
+        ...
 
     def __getitem__(self, i):
         return self._list[i]
@@ -237,7 +271,7 @@ class List(collections.abc.MutableSequence):
         )
 
 
-class ListField(Field):
+class ListField(Field[List[FieldTypeVar]], Generic[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that contains
     a list of values of a specific type.
 
@@ -245,8 +279,9 @@ class ListField(Field):
     ----------
     doc : `str`
         A description of the field.
-    dtype : class
-        The data type of items in the list.
+    dtype : class, optional
+        The data type of items in the list. Optional if supplied as typing
+        argument to the class.
     default : sequence, optional
         The default items for the field.
     optional : `bool`, optional
@@ -285,7 +320,7 @@ class ListField(Field):
     def __init__(
         self,
         doc,
-        dtype,
+        dtype=None,
         default=None,
         optional=False,
         listCheck=None,
@@ -295,6 +330,10 @@ class ListField(Field):
         maxLength=None,
         deprecated=None,
     ):
+        if dtype is None:
+            raise ValueError(
+                "dtype must either be supplied as an argument or as a type argument to the class"
+            )
         if dtype not in Field.supportedTypes:
             raise ValueError("Unsupported dtype %s" % _typeStr(dtype))
         if length is not None:
@@ -395,7 +434,13 @@ class ListField(Field):
                 msg = "%s is not a valid value" % str(value)
                 raise FieldValidationError(self, instance, msg)
 
-    def __set__(self, instance, value, at=None, label="assignment"):
+    def __set__(
+        self,
+        instance: Config,
+        value: Union[Iterable[FieldTypeVar], None],
+        at: Any = None,
+        label: str = "assignment",
+    ) -> None:
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
 

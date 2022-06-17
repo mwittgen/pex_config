@@ -25,17 +25,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 __all__ = ("ConfigurableInstance", "ConfigurableField")
 
 import copy
 import weakref
+from typing import Any, Generic, Mapping, Union, overload
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
-from .config import Config, Field, FieldValidationError, UnexpectedProxyUsageError, _joinNamePath, _typeStr
+from .config import (
+    Config,
+    Field,
+    FieldTypeVar,
+    FieldValidationError,
+    UnexpectedProxyUsageError,
+    _joinNamePath,
+    _typeStr,
+)
 
 
-class ConfigurableInstance:
+class ConfigurableInstance(Generic[FieldTypeVar]):
     """A retargetable configuration in a `ConfigurableField` that proxies
     a `~lsst.pex.config.Config`.
 
@@ -182,7 +193,7 @@ class ConfigurableInstance:
         )
 
 
-class ConfigurableField(Field):
+class ConfigurableField(Field[ConfigurableInstance[FieldTypeVar]]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that can be
     can be retargeted towards a different configurable (often a
     `lsst.pipe.base.Task` subclass).
@@ -299,6 +310,12 @@ class ConfigurableField(Field):
         self.target = target
         self.ConfigClass = ConfigClass
 
+    @staticmethod
+    def _parseTypingArgs(
+        params: Union[tuple[type, ...], tuple[str, ...]], kwds: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        return kwds
+
     def __getOrMake(self, instance, at=None, label="default"):
         value = instance._storage.get(self.name, None)
         if value is None:
@@ -307,6 +324,18 @@ class ConfigurableField(Field):
             value = ConfigurableInstance(instance, self, at=at, label=label)
             instance._storage[self.name] = value
         return value
+
+    @overload
+    def __get__(
+        self, instance: None, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> "ConfigurableField":
+        ...
+
+    @overload
+    def __get__(
+        self, instance: Config, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> ConfigurableInstance[FieldTypeVar]:
+        ...
 
     def __get__(self, instance, owner=None, at=None, label="default"):
         if instance is None or not isinstance(instance, Config):

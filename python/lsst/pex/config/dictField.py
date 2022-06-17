@@ -25,10 +25,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 __all__ = ["DictField"]
 
 import collections.abc
+import sys
 import weakref
+from typing import Any, ForwardRef, Generic, Iterator, Mapping, Type, TypeVar, Union, cast
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareScalars, getComparisonName
@@ -42,8 +46,17 @@ from .config import (
     _typeStr,
 )
 
+KeyTypeVar = TypeVar("KeyTypeVar")
+ItemTypeVar = TypeVar("ItemTypeVar")
 
-class Dict(collections.abc.MutableMapping):
+
+if int(sys.version_info.minor) < 9:
+    _bases = (collections.abc.MutableMapping, Generic[KeyTypeVar, ItemTypeVar])
+else:
+    _bases = (collections.abc.MutableMapping[KeyTypeVar, ItemTypeVar],)
+
+
+class Dict(*_bases):
     """An internal mapping container.
 
     This class emulates a `dict`, but adds validation and provenance.
@@ -70,26 +83,29 @@ class Dict(collections.abc.MutableMapping):
     def _config(self) -> Config:
         # Config Fields should never outlive their config class instance
         # assert that as such here
-        assert self._config_() is not None
-        return self._config_()
+        value = self._config_()
+        assert value is not None
+        return value
 
     history = property(lambda x: x._history)
     """History (read-only).
     """
 
-    def __getitem__(self, k):
+    def __getitem__(self, k: KeyTypeVar) -> ItemTypeVar:
         return self._dict[k]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._dict)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[KeyTypeVar]:
         return iter(self._dict)
 
-    def __contains__(self, k):
+    def __contains__(self, k: Any) -> bool:
         return k in self._dict
 
-    def __setitem__(self, k, x, at=None, label="setitem", setHistory=True):
+    def __setitem__(
+        self, k: KeyTypeVar, x: ItemTypeVar, at: Any = None, label: str = "setitem", setHistory: bool = True
+    ) -> None:
         if self._config._frozen:
             msg = "Cannot modify a frozen Config. Attempting to set item at key %r to value %s" % (k, x)
             raise FieldValidationError(self._field, self._config, msg)
@@ -128,7 +144,9 @@ class Dict(collections.abc.MutableMapping):
         if setHistory:
             self._history.append((dict(self._dict), at, label))
 
-    def __delitem__(self, k, at=None, label="delitem", setHistory=True):
+    def __delitem__(
+        self, k: KeyTypeVar, at: Any = None, label: str = "delitem", setHistory: bool = True
+    ) -> None:
         if self._config._frozen:
             raise FieldValidationError(self._field, self._config, "Cannot modify a frozen Config")
 
@@ -164,7 +182,7 @@ class Dict(collections.abc.MutableMapping):
         )
 
 
-class DictField(Field):
+class DictField(Field[Dict[KeyTypeVar, ItemTypeVar]], Generic[KeyTypeVar, ItemTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that maps keys
     and values.
 
@@ -177,10 +195,12 @@ class DictField(Field):
     ----------
     doc : `str`
         A documentation string that describes the configuration field.
-    keytype : {`int`, `float`, `complex`, `bool`, `str`}
-        The type of the mapping keys. All keys must have this type.
-    itemtype : {`int`, `float`, `complex`, `bool`, `str`}
-        Type of the mapping values.
+    keytype : {`int`, `float`, `complex`, `bool`, `str`}, optional
+        The type of the mapping keys. All keys must have this type. Optional
+        if keytype and itemtype are supplied as typing arguments to the class.
+    itemtype : {`int`, `float`, `complex`, `bool`, `str`}, optional
+        Type of the mapping values. Optional if keytype and itemtype are
+        supplied as typing arguments to the class.
     default : `dict`, optional
         The default mapping.
     optional : `bool`, optional
@@ -222,13 +242,48 @@ class DictField(Field):
     {'myKey': 42}
     """
 
-    DictClass = Dict
+    DictClass: Type[Dict] = Dict
+
+    @staticmethod
+    def _parseTypingArgs(
+        params: Union[tuple[type, ...], tuple[str, ...]], kwds: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        if len(params) != 2:
+            raise ValueError("Only tuples of types that are length 2 are supported")
+        resultParams = []
+        for typ in params:
+            if isinstance(typ, str):
+                _typ = ForwardRef(typ)
+                # type ignore below because typeshed seems to be wrong. It
+                # indicates there are only 2 args, as it was in python 3.8, but
+                # 3.9+ takes 3 args. Attempt in old style and new style to
+                # work with both.
+                try:
+                    result = _typ._evaluate(globals(), locals(), set())  # type: ignore
+                except TypeError:
+                    # python 3.8 path
+                    result = _typ._evaluate(globals(), locals())
+                if result is None:
+                    raise ValueError("Could not deduce type from input")
+                typ = cast(type, result)
+            resultParams.append(typ)
+        keyType, itemType = resultParams
+        results = dict(kwds)
+        if (supplied := kwds.get("keytype")) and supplied != keyType:
+            raise ValueError("Conflicting definition for keytype")
+        else:
+            results["keytype"] = keyType
+        if (supplied := kwds.get("itemtype")) and supplied != itemType:
+            raise ValueError("Conflicting definition for itemtype")
+        else:
+            results["itemtype"] = itemType
+        return results
 
     def __init__(
         self,
         doc,
-        keytype,
-        itemtype,
+        keytype=None,
+        itemtype=None,
         default=None,
         optional=False,
         dictCheck=None,
@@ -245,6 +300,10 @@ class DictField(Field):
             source=source,
             deprecated=deprecated,
         )
+        if keytype is None:
+            raise ValueError(
+                "keytype must either be supplied as an argument or as a type argument to the class"
+            )
         if keytype not in self.supportedTypes:
             raise ValueError("'keytype' %s is not a supported type" % _typeStr(keytype))
         elif itemtype is not None and itemtype not in self.supportedTypes:
@@ -291,7 +350,13 @@ class DictField(Field):
             msg = "%s is not a valid value" % str(value)
             raise FieldValidationError(self, instance, msg)
 
-    def __set__(self, instance, value, at=None, label="assignment"):
+    def __set__(
+        self,
+        instance: Config,
+        value: Union[Mapping[KeyTypeVar, ItemTypeVar], None],
+        at: Any = None,
+        label: str = "assignment",
+    ) -> None:
         if instance._frozen:
             msg = "Cannot modify a frozen Config. Attempting to set field to value %s" % value
             raise FieldValidationError(self, instance, msg)

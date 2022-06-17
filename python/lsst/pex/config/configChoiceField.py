@@ -24,12 +24,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
 
 __all__ = ["ConfigChoiceField"]
 
 import collections.abc
 import copy
+import sys
 import weakref
+from typing import Any, ForwardRef, Optional, Union, overload
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, compareScalars, getComparisonName
@@ -143,7 +146,13 @@ class SelectionSet(collections.abc.MutableSet):
         )
 
 
-class ConfigInstanceDict(collections.abc.Mapping):
+if int(sys.version_info.minor) < 9:
+    _bases = (collections.abc.Mapping,)
+else:
+    _bases = (collections.abc.Mapping[str, Config],)
+
+
+class ConfigInstanceDict(*_bases):
     """Dictionary of instantiated configs, used to populate a
     `~lsst.pex.config.ConfigChoiceField`.
 
@@ -358,7 +367,7 @@ class ConfigInstanceDict(collections.abc.Mapping):
         )
 
 
-class ConfigChoiceField(Field):
+class ConfigChoiceField(Field[ConfigInstanceDict]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that allows a
     user to choose from a set of `~lsst.pex.config.Config` types.
 
@@ -479,6 +488,9 @@ class ConfigChoiceField(Field):
         self.typemap = typemap
         self.multi = multi
 
+    def __class_getitem__(cls, params: Union[tuple[type, ...], type, ForwardRef]):
+        raise ValueError("ConfigChoiceField does not support typing argument")
+
     def _getOrMake(self, instance, label="default"):
         instanceDict = instance._storage.get(self.name)
         if instanceDict is None:
@@ -491,13 +503,27 @@ class ConfigChoiceField(Field):
 
         return instanceDict
 
-    def __get__(self, instance, owner=None):
+    @overload
+    def __get__(
+        self, instance: None, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> "ConfigChoiceField":
+        ...
+
+    @overload
+    def __get__(
+        self, instance: Config, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> ConfigInstanceDict:
+        ...
+
+    def __get__(self, instance, owner=None, at=None, label="default"):
         if instance is None or not isinstance(instance, Config):
             return self
         else:
             return self._getOrMake(instance)
 
-    def __set__(self, instance, value, at=None, label="assignment"):
+    def __set__(
+        self, instance: Config, value: Optional[ConfigInstanceDict], at: Any = None, label: str = "assignment"
+    ) -> None:
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         if at is None:

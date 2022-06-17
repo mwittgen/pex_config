@@ -80,6 +80,33 @@ class DictFieldTest(unittest.TestCase):
         else:
             raise SyntaxError("Non-callable dictCheck DictFields should not be allowed")
 
+    def testFieldTypeAnnotationRuntime(self):
+        # test parsing type annotation for runtime keytype, itemtype
+        testField = pexConfig.DictField[str, int](doc="")
+        self.assertEqual(testField.keytype, str)
+        self.assertEqual(testField.itemtype, int)
+
+        # verify that forward references work correctly
+        testField = pexConfig.DictField["float", "int"](doc="")
+        self.assertEqual(testField.keytype, float)
+        self.assertEqual(testField.itemtype, int)
+
+        # verify that Field rejects single types
+        with self.assertRaises(ValueError):
+            pexConfig.DictField[int](doc="")  # type: ignore
+
+        # verify that Field raises in conflict with keytype, itemtype
+        with self.assertRaises(ValueError):
+            pexConfig.DictField[str, int](doc="", keytype=int)
+
+        with self.assertRaises(ValueError):
+            pexConfig.DictField[str, int](doc="", itemtype=str)
+
+        # verify that Field does not raise if dtype agrees
+        testField = pexConfig.DictField[int, str](doc="", keytype=int, itemtype=str)
+        self.assertEqual(testField.keytype, int)
+        self.assertEqual(testField.itemtype, str)
+
     def testAssignment(self):
         c = Config1()
         self.assertRaises(pexConfig.FieldValidationError, setattr, c, "d1", {3: 3})
