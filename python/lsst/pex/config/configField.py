@@ -29,10 +29,10 @@ __all__ = ["ConfigField"]
 
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr, FieldTypeVar
 
 
-class ConfigField(Field):
+class ConfigField(Field[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that takes a
     `~lsst.pex.config.Config`-type as a value.
 
@@ -94,7 +94,7 @@ class ConfigField(Field):
             deprecated=deprecated,
         )
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance, owner=None) -> FieldTypeVar:
         if instance is None or not isinstance(instance, Config):
             return self
         else:

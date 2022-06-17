@@ -25,7 +25,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ("Config", "ConfigMeta", "Field", "FieldValidationError", "UnexpectedProxyUsageError")
+__all__ = (
+    "Config",
+    "ConfigMeta",
+    "Field",
+    "FieldValidationError",
+    "UnexpectedProxyUsageError",
+    "FieldTypeVar"
+)
 
 import copy
 import importlib
@@ -37,6 +44,11 @@ import shutil
 import sys
 import tempfile
 import warnings
+
+from typing import Generic, TypeVar, ForwardRef
+
+
+FieldTypeVar = TypeVar("FieldTypeVar")
 
 # if YAML is not available that's fine and we simply don't register
 # the yaml representer since we know it won't be used.
@@ -258,7 +270,7 @@ class FieldValidationError(ValueError):
         super().__init__(error)
 
 
-class Field:
+class Field(Generic[FieldTypeVar]):
     """A field in a `~lsst.pex.config.Config` that supports `int`, `float`,
     `complex`, `bool`, and `str` data types.
 
@@ -338,6 +350,20 @@ class Field:
     supportedTypes = set((str, bool, float, int, complex))
     """Supported data types for field values (`set` of types).
     """
+
+    def __class_getitem__(cls, params):
+        if isinstance(params, tuple):
+            raise ValueError("Only single type parameters are supported")
+        if isinstance(params, ForwardRef):
+            params = params._evaluate(globals(), locals(),)
+
+        def passthrough(*args, **kwargs):
+            if 'dtype' in kwargs and kwargs['dtype'] != params:
+                raise ValueError("Conflicting definition for dtype")
+            elif 'dtype' not in kwargs:
+                kwargs['dtype'] = params
+            return cls(*args, **kwargs)
+        return passthrough
 
     def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
         if dtype not in self.supportedTypes:
@@ -570,7 +596,7 @@ class Field:
         """
         return self.__get__(instance)
 
-    def __get__(self, instance, owner=None, at=None, label="default"):
+    def __get__(self, instance, owner=None, at=None, label="default") -> FieldTypeVar:
         """Define how attribute access should occur on the Config instance
         This is invoked by the owning config object and should not be called
         directly
