@@ -40,10 +40,11 @@ from .config import (
     _autocast,
     _joinNamePath,
     _typeStr,
+    FieldTypeVar
 )
 
 
-class List(collections.abc.MutableSequence):
+class List(collections.abc.MutableSequence[FieldTypeVar]):
     """List collection used internally by `ListField`.
 
     Parameters
@@ -237,7 +238,7 @@ class List(collections.abc.MutableSequence):
         )
 
 
-class ListField(Field):
+class ListField(Field[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that contains
     a list of values of a specific type.
 
@@ -245,8 +246,9 @@ class ListField(Field):
     ----------
     doc : `str`
         A description of the field.
-    dtype : class
-        The data type of items in the list.
+    dtype : class, optional
+        The data type of items in the list. Optional if supplied as typing
+        argument to the class.
     default : sequence, optional
         The default items for the field.
     optional : `bool`, optional
@@ -285,7 +287,7 @@ class ListField(Field):
     def __init__(
         self,
         doc,
-        dtype,
+        dtype=None,
         default=None,
         optional=False,
         listCheck=None,
@@ -295,6 +297,10 @@ class ListField(Field):
         maxLength=None,
         deprecated=None,
     ):
+        if dtype is None:
+            raise ValueError(
+                "dtype must either be supplied as an argument or as a type argument to the class"
+            )
         if dtype not in Field.supportedTypes:
             raise ValueError("Unsupported dtype %s" % _typeStr(dtype))
         if length is not None:
@@ -394,6 +400,9 @@ class ListField(Field):
             elif self.listCheck is not None and not self.listCheck(value):
                 msg = "%s is not a valid value" % str(value)
                 raise FieldValidationError(self, instance, msg)
+
+    def __get__(self, instance, owner=None, at=None, label="default") -> List[FieldTypeVar]:
+        return super().__get__(instance, owner, at, label)  # type: ignore
 
     def __set__(self, instance, value, at=None, label="assignment"):
         if instance._frozen:

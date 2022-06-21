@@ -27,6 +27,8 @@
 
 __all__ = ["DictField"]
 
+from typing import ForwardRef, cast, Generic, TypeVar, MutableMapping, Any
+
 import collections.abc
 import weakref
 
@@ -42,8 +44,11 @@ from .config import (
     _typeStr,
 )
 
+KeyTypeVar = TypeVar("KeyTypeVar")
+ItemTypeVar = TypeVar("ItemTypeVar")
 
-class Dict(collections.abc.MutableMapping):
+
+class Dict(collections.abc.MutableMapping[KeyTypeVar, ItemTypeVar]):
     """An internal mapping container.
 
     This class emulates a `dict`, but adds validation and provenance.
@@ -164,7 +169,7 @@ class Dict(collections.abc.MutableMapping):
         )
 
 
-class DictField(Field):
+class DictField(Field, Generic[KeyTypeVar, ItemTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that maps keys
     and values.
 
@@ -177,10 +182,12 @@ class DictField(Field):
     ----------
     doc : `str`
         A documentation string that describes the configuration field.
-    keytype : {`int`, `float`, `complex`, `bool`, `str`}
-        The type of the mapping keys. All keys must have this type.
-    itemtype : {`int`, `float`, `complex`, `bool`, `str`}
-        Type of the mapping values.
+    keytype : {`int`, `float`, `complex`, `bool`, `str`}, optional
+        The type of the mapping keys. All keys must have this type. Optional
+        if keytype and itemtype are supplied as typing arguments to the class.
+    itemtype : {`int`, `float`, `complex`, `bool`, `str`}, optional
+        Type of the mapping values. Optional if keytype and itemtype are
+        supplied as typing arguments to the class.
     default : `dict`, optional
         The default mapping.
     optional : `bool`, optional
@@ -224,11 +231,36 @@ class DictField(Field):
 
     DictClass = Dict
 
+    @staticmethod
+    def _parseTypingArgs(
+            params: tuple[type, ...] | tuple[ForwardRef, ...],
+            kwds: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
+        if len(params) != 2:
+            raise ValueError("Only tuples of types that are length 2 are supported")
+        resultParams = []
+        for typ in params:
+            if isinstance(typ, ForwardRef):
+                if (result := typ._evaluate(globals(), locals(),)) is None:
+                    raise ValueError("Could not deduce type from input")
+                typ = cast(type, result)
+            resultParams.append(typ)
+        keyType, itemType = resultParams
+        if (supplied := kwds.get('keytype')) and supplied != keyType:
+            raise ValueError("Conflicting definition for keytype")
+        else:
+            kwds['keytype'] = keyType
+        if (supplied := kwds.get('itemtype')) and supplied != itemType:
+            raise ValueError("Conflicting definition for itemtype")
+        else:
+            kwds['itemtype'] = itemType
+        return kwds
+
     def __init__(
         self,
         doc,
-        keytype,
-        itemtype,
+        keytype=None,
+        itemtype=None,
         default=None,
         optional=False,
         dictCheck=None,
@@ -245,6 +277,10 @@ class DictField(Field):
             source=source,
             deprecated=deprecated,
         )
+        if keytype is None:
+            raise ValueError(
+                "keytype must either be supplied as an argument or as a type argument to the class"
+            )
         if keytype not in self.supportedTypes:
             raise ValueError("'keytype' %s is not a supported type" % _typeStr(keytype))
         elif itemtype is not None and itemtype not in self.supportedTypes:
@@ -258,6 +294,9 @@ class DictField(Field):
         self.itemtype = itemtype
         self.dictCheck = dictCheck
         self.itemCheck = itemCheck
+
+    def __get__(self, instance, owner=None, at=None, label="default") -> DictClass[KeyTypeVar, ItemTypeVar]:
+        return super().__get__(instance, owner, at, label)
 
     def validate(self, instance):
         """Validate the field's value (for internal use only).

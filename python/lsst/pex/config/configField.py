@@ -27,12 +27,14 @@
 
 __all__ = ["ConfigField"]
 
+from typing import Generic
+
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
 from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr, FieldTypeVar
 
 
-class ConfigField(Field[FieldTypeVar]):
+class ConfigField(Field, Generic[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that takes a
     `~lsst.pex.config.Config`-type as a value.
 

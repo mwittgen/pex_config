@@ -45,10 +45,8 @@ import sys
 import tempfile
 import warnings
 
-from typing import Generic, TypeVar, ForwardRef
-
-
-FieldTypeVar = TypeVar("FieldTypeVar")
+from typing import Generic, TypeVar, ForwardRef, cast, Any, MutableMapping
+from types import GenericAlias
 
 # if YAML is not available that's fine and we simply don't register
 # the yaml representer since we know it won't be used.
@@ -72,6 +70,15 @@ if yaml:
         YamlLoaders += (CLoader,)
     except ImportError:
         pass
+
+
+class PexGenericAlias(GenericAlias):
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        origin_kwargs = self._parseTypingArgs(self.__args__, kwds)
+        return super().__call__(*args, **(kwds | origin_kwargs))
+
+
+FieldTypeVar = TypeVar("FieldTypeVar")
 
 
 class UnexpectedProxyUsageError(TypeError):
@@ -278,10 +285,11 @@ class Field(Generic[FieldTypeVar]):
     ----------
     doc : `str`
         A description of the field for users.
-    dtype : type
+    dtype : type, optional
         The field's data type. ``Field`` only supports basic data types:
         `int`, `float`, `complex`, `bool`, and `str`. See
-        `Field.supportedTypes`.
+        `Field.supportedTypes`. Optional if supplied as a typing argument to
+        the class.
     default : object, optional
         The field's default value.
     check : callable, optional
@@ -351,21 +359,32 @@ class Field(Generic[FieldTypeVar]):
     """Supported data types for field values (`set` of types).
     """
 
-    def __class_getitem__(cls, params):
-        if isinstance(params, tuple):
+    @staticmethod
+    def _parseTypingArgs(
+            params: tuple[type, ...] | tuple[ForwardRef, ...],
+            kwds: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
+        if len(params) > 1:
             raise ValueError("Only single type parameters are supported")
-        if isinstance(params, ForwardRef):
-            params = params._evaluate(globals(), locals(),)
+        unpackedParams = params[0]
+        if isinstance(unpackedParams, ForwardRef):
+            if (result := unpackedParams._evaluate(globals(), locals(),)) is None:
+                raise ValueError("Could not deduce type from input")
+            unpackedParams = cast(type, result)
+        if 'dtype' in kwds and kwds['dtype'] != unpackedParams:
+            raise ValueError("Conflicting definition for dtype")
+        elif 'dtype' not in kwds:
+            kwds['dtype'] = unpackedParams
+        return kwds
 
-        def passthrough(*args, **kwargs):
-            if 'dtype' in kwargs and kwargs['dtype'] != params:
-                raise ValueError("Conflicting definition for dtype")
-            elif 'dtype' not in kwargs:
-                kwargs['dtype'] = params
-            return cls(*args, **kwargs)
-        return passthrough
+    def __class_getitem__(cls, params: tuple[type, ...] | type | ForwardRef):
+        return PexGenericAlias(cls, params)
 
-    def __init__(self, doc, dtype, default=None, check=None, optional=False, deprecated=None):
+    def __init__(self, doc, dtype=None, default=None, check=None, optional=False, deprecated=None):
+        if dtype is None:
+            raise ValueError(
+                "dtype must either be supplied as an argument or as a type argument to the class"
+            )
         if dtype not in self.supportedTypes:
             raise ValueError("Unsupported Field dtype %s" % _typeStr(dtype))
 

@@ -31,6 +31,8 @@ import collections.abc
 import copy
 import weakref
 
+from typing import ForwardRef
+
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, compareScalars, getComparisonName
 from .config import Config, Field, FieldValidationError, UnexpectedProxyUsageError, _joinNamePath, _typeStr
@@ -143,7 +145,7 @@ class SelectionSet(collections.abc.MutableSet):
         )
 
 
-class ConfigInstanceDict(collections.abc.Mapping):
+class ConfigInstanceDict(collections.abc.Mapping[str, Config]):
     """Dictionary of instantiated configs, used to populate a
     `~lsst.pex.config.ConfigChoiceField`.
 
@@ -479,6 +481,9 @@ class ConfigChoiceField(Field):
         self.typemap = typemap
         self.multi = multi
 
+    def __class_getitem__(cls, params: tuple[type, ...] | type | ForwardRef):
+        raise ValueError("ConfigChoiceField does not support typing argument")
+
     def _getOrMake(self, instance, label="default"):
         instanceDict = instance._storage.get(self.name)
         if instanceDict is None:
@@ -491,7 +496,7 @@ class ConfigChoiceField(Field):
 
         return instanceDict
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance, owner=None) -> instanceDictClass:
         if instance is None or not isinstance(instance, Config):
             return self
         else:

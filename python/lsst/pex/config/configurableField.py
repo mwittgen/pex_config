@@ -30,12 +30,22 @@ __all__ = ("ConfigurableInstance", "ConfigurableField")
 import copy
 import weakref
 
+from typing import Generic, MutableMapping, ForwardRef, Any
+
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
-from .config import Config, Field, FieldValidationError, UnexpectedProxyUsageError, _joinNamePath, _typeStr
+from .config import (
+    Config,
+    Field,
+    FieldValidationError,
+    UnexpectedProxyUsageError,
+    _joinNamePath,
+    _typeStr,
+    FieldTypeVar
+)
 
 
-class ConfigurableInstance:
+class ConfigurableInstance(Generic[FieldTypeVar]):
     """A retargetable configuration in a `ConfigurableField` that proxies
     a `~lsst.pex.config.Config`.
 
@@ -182,7 +192,7 @@ class ConfigurableInstance:
         )
 
 
-class ConfigurableField(Field):
+class ConfigurableField(Field[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that can be
     can be retargeted towards a different configurable (often a
     `lsst.pipe.base.Task` subclass).
@@ -299,6 +309,13 @@ class ConfigurableField(Field):
         self.target = target
         self.ConfigClass = ConfigClass
 
+    @staticmethod
+    def _parseTypingArgs(
+            params: tuple[type, ...] | tuple[ForwardRef, ...],
+            kwds: MutableMapping[str, Any]
+    ) -> MutableMapping[str, Any]:
+        return kwds
+
     def __getOrMake(self, instance, at=None, label="default"):
         value = instance._storage.get(self.name, None)
         if value is None:
@@ -308,9 +325,9 @@ class ConfigurableField(Field):
             instance._storage[self.name] = value
         return value
 
-    def __get__(self, instance, owner=None, at=None, label="default"):
+    def __get__(self, instance, owner=None, at=None, label="default") -> ConfigurableInstance[FieldTypeVar]:
         if instance is None or not isinstance(instance, Config):
-            return self
+            return self  # type: ignore
         else:
             return self.__getOrMake(instance, at=at, label=label)
 
