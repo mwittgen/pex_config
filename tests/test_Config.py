@@ -308,12 +308,13 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
         del roundTrip
 
-        # test backwards compatibility feature of allowing "root" instead of
-        # "config"
+        # Test an override of the default variable name.
         with open("roundtrip.test", "w") as outfile:
             self.comp.saveToStream(outfile, root="root")
         roundTrip = Complex()
-        roundTrip.load("roundtrip.test")
+        with self.assertRaises(NameError):
+            roundTrip.load("roundtrip.test")
+        roundTrip.load("roundtrip.test", root="root")
         os.remove("roundtrip.test")
         self.assertEqual(self.comp.c.f, roundTrip.c.f)
         self.assertEqual(self.comp.r.name, roundTrip.r.name)
