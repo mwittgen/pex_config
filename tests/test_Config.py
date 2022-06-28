@@ -115,6 +115,27 @@ class ConfigTest(unittest.TestCase):
         del self.outer
         del self.comp
 
+    def testFieldTypeAnnotationRuntime(self):
+        # test parsing type annotation for runtime dtype
+        testField = pexConfig.Field[str](doc="")
+        self.assertEqual(testField.dtype, str)
+
+        # verify that forward references work correctly
+        testField = pexConfig.Field["float"](doc="")
+        self.assertEqual(testField.dtype, float)
+
+        # verify that Field rejects multiple types
+        with self.assertRaises(ValueError):
+            pexConfig.Field[str, int](doc="")  # type: ignore
+
+        # verify that Field raises in conflict with dtype:
+        with self.assertRaises(ValueError):
+            pexConfig.Field[str](doc="", dtype=int)
+
+        # verify that Field does not raise if dtype agrees
+        testField = pexConfig.Field[int](doc="", dtype=int)
+        self.assertEqual(testField.dtype, int)
+
     def testInit(self):
         self.assertIsNone(self.simple.i)
         self.assertEqual(self.simple.f, 3.0)

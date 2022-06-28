@@ -33,7 +33,7 @@ from .config import Config, FieldValidationError, _autocast, _joinNamePath, _typ
 from .dictField import Dict, DictField
 
 
-class ConfigDict(Dict):
+class ConfigDict(Dict[str, Config]):
     """Internal representation of a dictionary of configuration classes.
 
     Much like `Dict`, `ConfigDict` is a custom `MutableMapper` which tracks

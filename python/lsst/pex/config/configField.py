@@ -27,12 +27,14 @@
 
 __all__ = ["ConfigField"]
 
+from typing import Any, Optional, overload
+
 from .callStack import getCallStack, getStackFrame
 from .comparison import compareConfigs, getComparisonName
-from .config import Config, Field, FieldValidationError, _joinNamePath, _typeStr
+from .config import Config, Field, FieldTypeVar, FieldValidationError, _joinNamePath, _typeStr
 
 
-class ConfigField(Field):
+class ConfigField(Field[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that takes a
     `~lsst.pex.config.Config`-type as a value.
 
@@ -78,8 +80,8 @@ class ConfigField(Field):
     configuration.
     """
 
-    def __init__(self, doc, dtype, default=None, check=None, deprecated=None):
-        if not issubclass(dtype, Config):
+    def __init__(self, doc, dtype=None, default=None, check=None, deprecated=None):
+        if dtype is None or not issubclass(dtype, Config):
             raise ValueError("dtype=%s is not a subclass of Config" % _typeStr(dtype))
         if default is None:
             default = dtype
@@ -94,7 +96,19 @@ class ConfigField(Field):
             deprecated=deprecated,
         )
 
-    def __get__(self, instance, owner=None):
+    @overload
+    def __get__(
+        self, instance: None, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> "ConfigField[FieldTypeVar]":
+        ...
+
+    @overload
+    def __get__(
+        self, instance: Config, owner: Any = None, at: Any = None, label: str = "default"
+    ) -> FieldTypeVar:
+        ...
+
+    def __get__(self, instance, owner=None, at=None, label="default"):
         if instance is None or not isinstance(instance, Config):
             return self
         else:
@@ -105,7 +119,9 @@ class ConfigField(Field):
                 self.__set__(instance, self.default, at=at, label="default")
             return value
 
-    def __set__(self, instance, value, at=None, label="assignment"):
+    def __set__(
+        self, instance: Config, value: Optional[FieldTypeVar], at: Any = None, label: str = "assignment"
+    ) -> None:
         if instance._frozen:
             raise FieldValidationError(self, instance, "Cannot modify a frozen Config")
         name = _joinNamePath(prefix=instance._name, name=self.name)
