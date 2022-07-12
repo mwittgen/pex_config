@@ -22,9 +22,9 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
-          python-version:  ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install yaml
@@ -64,7 +64,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
           cache: "pip"
@@ -77,8 +77,7 @@ jobs:
 
       - name: Build and create distribution
         run: |
-          pip install -v -e .
-          python -m build --sdist --wheel
+          python -m build --skip-dependency-check
 
       - name: Upload
         uses: pypa/gh-action-pypi-publish@release/v1
