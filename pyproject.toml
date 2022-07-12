@@ -29,7 +29,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-"Homepage" = "https://github.com/lsst/pex-config"
+"Homepage" = "https://github.com/lsst/pex_config"
 
 [project.optional-dependencies]
 test = [
