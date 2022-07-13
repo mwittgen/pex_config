@@ -28,10 +28,10 @@
 __all__ = ["ChoiceField"]
 
 from .callStack import getStackFrame
-from .config import Field, _typeStr
+from .config import Field, FieldTypeVar, _typeStr
 
 
-class ChoiceField(Field):
+class ChoiceField(Field[FieldTypeVar]):
     """A configuration field (`~lsst.pex.config.Field` subclass) that allows a
     user to select from a predefined set of values.
 
@@ -69,7 +69,11 @@ class ChoiceField(Field):
     RegistryField
     """
 
-    def __init__(self, doc, dtype, allowed, default=None, optional=True, deprecated=None):
+    def __init__(self, doc, dtype=None, allowed=None, default=None, optional=True, deprecated=None):
+        if dtype is None:
+            raise ValueError("supplied dtype must not be None")
+        if allowed is None:
+            raise ValueError("supplied allowed mapping must not be None")
         self.allowed = dict(allowed)
         if optional and None not in self.allowed:
             self.allowed[None] = "Field is optional"
