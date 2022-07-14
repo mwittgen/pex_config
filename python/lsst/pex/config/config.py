@@ -1042,9 +1042,9 @@ class Config(metaclass=ConfigMeta):  # type: ignore
         for field in instance._fields.values():
             instance._history[field.name] = []
             field.__set__(instance, field.default, at=at + [field.source], label="default")
-        # set custom default-overides
+        # set custom default-overrides
         instance.setDefaults()
-        # set constructor overides
+        # set constructor overrides
         instance.update(__at=at, **kw)
         return instance
 
